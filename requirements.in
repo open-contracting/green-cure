@@ -1,0 +1,6 @@
+black
+click
+isort
+lxml
+pip-tools
+ruff
