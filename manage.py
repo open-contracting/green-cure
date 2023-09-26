@@ -11,7 +11,7 @@ from urllib.request import urlopen
 import click
 from lxml import etree
 
-now = datetime.now()
+now = datetime.now(tz=datetime.UTC)
 directory = Path(__file__).resolve().parent / "data"
 
 
@@ -43,7 +43,6 @@ def download(startyear, startmonth, endyear, endmonth):
     """
     Write monthly packages from TED to a data/ directory.
     """
-
     directory.mkdir(exist_ok=True)
 
     for year, month in yearmonths(startyear, startmonth, endyear, endmonth):
@@ -55,9 +54,8 @@ def download(startyear, startmonth, endyear, endmonth):
         url = f"ftp://guest:guest@ted.europa.eu/monthly-packages/{year}/{year}-{month:02d}.tar.gz"
         click.echo(f"Retrieving {url} ...")
         try:
-            with closing(urlopen(url)) as r:
-                with path.open("wb") as f:
-                    shutil.copyfileobj(r, f)
+            with closing(urlopen(url)) as r, path.open("wb") as f:
+                shutil.copyfileobj(r, f)
         except URLError as e:
             click.echo(e.reason, err=True)
 
@@ -67,12 +65,11 @@ def download(startyear, startmonth, endyear, endmonth):
 @click.argument("startmonth", type=click.IntRange(1, 12))
 @click.argument("endyear", type=click.IntRange(2015, now.year))
 @click.argument("endmonth", type=click.IntRange(1, 12))
-@click.argument("file", type=click.File('w'))
+@click.argument("file", type=click.File("w"))
 def transform(startyear, startmonth, endyear, endmonth, file):
     """
     Transform monthly packages in the data/ directory to CSV files.
     """
-
     kw = {"namespaces": {"ns": "http://publications.europa.eu/resource/schema/ted/R2.0.9/publication"}}
 
     writer = csv.DictWriter(
@@ -196,18 +193,20 @@ def transform(startyear, startmonth, endyear, endmonth, file):
                 for lot in lots:
                     row = common.copy()
 
-                    row["CPV_ADDITIONAL"] = ";".join([
-                        code
-                        for cpv in lot.xpath("./ns:CPV_ADDITIONAL", **kw)
-                        for code in cpv.xpath("./ns:CPV_CODE/@CODE", **kw)
-                        if code != common["CPV_MAIN"]
-                    ])
+                    row["CPV_ADDITIONAL"] = ";".join(
+                        [
+                            code
+                            for cpv in lot.xpath("./ns:CPV_ADDITIONAL", **kw)
+                            for code in cpv.xpath("./ns:CPV_CODE/@CODE", **kw)
+                            if code != common["CPV_MAIN"]
+                        ]
+                    )
 
                     if ac := lot.xpath("./ns:AC", **kw):
                         ac = ac[0]
 
-                        row["AC_PROCUREMENT_DOC"] = bool(ac.xpath(f"./ns:AC_PROCUREMENT_DOC", **kw))
-                        row["AC_PRICE"] = bool(ac.xpath(f"./ns:AC_PRICE", **kw))
+                        row["AC_PROCUREMENT_DOC"] = bool(ac.xpath("./ns:AC_PROCUREMENT_DOC", **kw))
+                        row["AC_PRICE"] = bool(ac.xpath("./ns:AC_PRICE", **kw))
 
                         for element in ("AC_QUALITY", "AC_COST"):
                             texts = [

@@ -6,4 +6,16 @@ profile = "black"
 
 [tool.ruff]
 line-length = 119
+select = ["ALL"]
 target-version = "py311"
+ignore = [
+  "ANN", "COM", "CPY", "EM",
+  "D100", "D200", "D203", "D212",
+  "C901",  # ... is too complex
+  "D103",  # Missing docstring in public function
+  "PLR0915",  # Too many statements
+  "S101",  # Use of `assert` detected
+  "S310",  # Audit URL open for permitted schemes
+  "S320",  # Using `lxml` to parse untrusted data
+  "TRY003",  # Avoid specifying long messages outside the exception class
+]
