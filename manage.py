@@ -165,6 +165,11 @@ def transform(startyear, startmonth, endyear, endmonth, file):
                 urls = ted.xpath("./ns:CODED_DATA_SECTION/ns:NOTICE_DATA/ns:URI_LIST/ns:URI_DOC", **kw)
                 common["URI_DOC"] = urls[0].text
 
+                url_document = form.xpath("./ns:CONTRACTING_BODY/ns:URL_DOCUMENT/text()", **kw)
+                common["URL_DOCUMENT_ANY"] = bool(url_document)
+                if url_document:
+                    common["URL_DOCUMENT"] = url_document
+
                 common["CPV2"] = cpv[:2]
                 common["CPV3"] = cpv[:3]
                 common["CPV4"] = cpv[:4]
