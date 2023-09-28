@@ -27,7 +27,7 @@ Transform TED XML data to CSV, for example:
 Perform a semantic similarity search:
 
 ```shell
-./manage.py search 2022.csv queries.csv
+./manage.py search 2022.csv queries.csv 391
 ```
 
 ## Exploration
