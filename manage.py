@@ -1,17 +1,19 @@
 #!/usr/bin/env python
 import csv
+import datetime
 import shutil
 import tarfile
+import time
 from contextlib import closing
-from datetime import datetime
 from pathlib import Path
 from urllib.error import URLError
 from urllib.request import urlopen
 
 import click
 from lxml import etree
+from sentence_transformers import SentenceTransformer, util
 
-now = datetime.now(tz=datetime.UTC)
+now = datetime.datetime.now(tz=datetime.UTC)
 directory = Path(__file__).resolve().parent / "data"
 
 
@@ -68,7 +70,7 @@ def download(startyear, startmonth, endyear, endmonth):
 @click.argument("file", type=click.File("w"))
 def transform(startyear, startmonth, endyear, endmonth, file):
     """
-    Transform monthly packages in the data/ directory to CSV files.
+    Transform monthly packages in the data/ directory to a CSV file.
     """
     kw = {"namespaces": {"ns": "http://publications.europa.eu/resource/schema/ted/R2.0.9/publication"}}
 
@@ -222,6 +224,43 @@ def transform(startyear, startmonth, endyear, endmonth, file):
                         row["CRITERIA_CANDIDATE"] = "\n\n".join(p)
 
                     writer.writerow(row)
+
+
+@cli.command()
+@click.argument("file", type=click.File())
+@click.argument("requirements", type=click.File())
+def search(file, requirements):
+    """
+    Calculate which rows of a CSV file match green requirements.
+    """
+    # https://huggingface.co/models?pipeline_tag=sentence-similarity&sort=trending&search=multilingual
+    # intfloat/multilingual-e5-* don't perform well. Use sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2 or
+    # sentence-transformers/paraphrase-multilingual-mpnet-base-v2.
+    model = SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
+
+    t = time.time()
+
+    queries = requirements.read().splitlines()
+    corpus = file.read().splitlines()
+
+    query_embeddings = model.encode(queries, convert_to_tensor=True, normalize_embeddings=True)
+    corpus_embeddings = model.encode(corpus, convert_to_tensor=True, normalize_embeddings=True)
+
+    reponses = util.semantic_search(
+        query_embeddings,
+        corpus_embeddings,
+        top_k=min(5, len(corpus)),
+        score_function=util.dot_score,
+        # 100 queries in parallel. Increase these to increase speed (requiring more memory).
+        query_chunk_size=100,
+        corpus_chunk_size=500000,
+    )
+    for i, reponse in enumerate(reponses):
+        click.echo(f"\nQ: {queries[i]}")
+        for hit in reponse:
+            click.echo(f"{hit['score']:.4f} {corpus[hit['corpus_id']]}")
+
+    click.echo(f"{time.time() - t:.2f}s")
 
 
 if __name__ == "__main__":

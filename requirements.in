@@ -4,3 +4,4 @@ isort
 lxml
 pip-tools
 ruff
+sentence-transformers
