@@ -1,10 +1,14 @@
 #!/usr/bin/env python
 import csv
 import datetime
+import os
+import pickle
+import re
 import shutil
 import tarfile
 import time
-from contextlib import closing
+from contextlib import closing, contextmanager
+from functools import cache
 from pathlib import Path
 from urllib.error import URLError
 from urllib.request import urlopen
@@ -12,6 +16,8 @@ from urllib.request import urlopen
 import click
 from lxml import etree
 from sentence_transformers import SentenceTransformer, util
+
+CACHE_VERSION = 1
 
 now = datetime.datetime.now(tz=datetime.UTC)
 directory = Path(__file__).resolve().parent / "data"
@@ -34,6 +40,35 @@ def yearmonths(startyear, startmonth, endyear, endmonth):
 
         for month in range(firstmonth, lastmonth + 1):
             yield year, month
+
+
+@contextmanager
+def timed(message):
+    start = time.time()
+    click.echo(f"{message}... ", nl=False)
+    yield
+    click.echo(f"{time.time() - start:.2f}s")
+
+
+@cache
+def model():
+    return SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
+
+
+def cached(file, message, function):
+    cache = Path(f"{file.name}-{os.stat(file.name).st_mtime}-v{CACHE_VERSION}.pickle")
+    if cache.exists():
+        with cache.open("rb") as f:
+            return pickle.load(f)
+
+    sentences, count = function()
+
+    with timed(message.format(sentences=len(sentences), count=count)):
+        embeddings = model().encode(sentences, convert_to_tensor=True, normalize_embeddings=True)
+    with cache.open("wb") as f:
+        pickle.dump([sentences, embeddings], f, protocol=pickle.HIGHEST_PROTOCOL)
+
+    return sentences, embeddings
 
 
 @cli.command()
@@ -236,38 +271,53 @@ def transform(startyear, startmonth, endyear, endmonth, file):
 @cli.command()
 @click.argument("file", type=click.File())
 @click.argument("requirements", type=click.File())
-def search(file, requirements):
+@click.argument("cpv")
+def search(file, requirements, cpv):
     """
-    Calculate which rows of a CSV file match green requirements.
+    Calculate which rows of a CSV file match the CPV code and any green requirements.
     """
+
     # https://huggingface.co/models?pipeline_tag=sentence-similarity&sort=trending&search=multilingual
     # intfloat/multilingual-e5-* don't perform well. Use sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2 or
     # sentence-transformers/paraphrase-multilingual-mpnet-base-v2.
-    model = SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
+    def load_queries():
+        return requirements.read().splitlines(), 0
 
-    t = time.time()
+    def load_corpus():
+        sentences = []
+        reader = csv.DictReader(file)
+        cpv_key = f"CPV{len(cpv)}"
+        newline = re.compile(r"\n+")
+        rowcount = 0
+        for row in reader:
+            if row[cpv_key] != cpv:
+                continue
+            if row["TECHNICAL_PROFESSIONAL_INFO_ANY"] != "True":
+                continue
+            rowcount += 1
+            for line in newline.split(row["TECHNICAL_PROFESSIONAL_INFO"]):
+                sentences.extend(line.split(". "))
 
-    queries = requirements.read().splitlines()
-    corpus = file.read().splitlines()
+        return sentences, rowcount
 
-    query_embeddings = model.encode(queries, convert_to_tensor=True, normalize_embeddings=True)
-    corpus_embeddings = model.encode(corpus, convert_to_tensor=True, normalize_embeddings=True)
+    queries, query_embeddings = cached(requirements, "Encoding {sentences} queries", load_queries)
+    corpus, corpus_embeddings = cached(file, "Encoding {sentences} sentences from {count} procedures", load_corpus)
 
-    reponses = util.semantic_search(
-        query_embeddings,
-        corpus_embeddings,
-        top_k=min(5, len(corpus)),
-        score_function=util.dot_score,
-        # 100 queries in parallel. Increase these to increase speed (requiring more memory).
-        query_chunk_size=100,
-        corpus_chunk_size=500000,
-    )
+    with timed("Searching"):
+        reponses = util.semantic_search(
+            query_embeddings,
+            corpus_embeddings,
+            top_k=min(5, len(corpus)),
+            score_function=util.dot_score,
+            # 100 queries in parallel. Increase these to increase speed (requiring more memory).
+            query_chunk_size=100,
+            corpus_chunk_size=500000,
+        )
+
     for i, reponse in enumerate(reponses):
         click.echo(f"\nQ: {queries[i]}")
         for hit in reponse:
             click.echo(f"{hit['score']:.4f} {corpus[hit['corpus_id']]}")
-
-    click.echo(f"{time.time() - t:.2f}s")
 
 
 if __name__ == "__main__":

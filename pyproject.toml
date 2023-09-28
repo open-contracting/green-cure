@@ -14,7 +14,9 @@ ignore = [
   "C901",  # ... is too complex
   "D103",  # Missing docstring in public function
   "PLR0915",  # Too many statements
+  "PTH116",  # os.stat()
   "S101",  # Use of `assert` detected
+  "S301",  # pickle
   "S310",  # Audit URL open for permitted schemes
   "S320",  # Using `lxml` to parse untrusted data
   "TRY003",  # Avoid specifying long messages outside the exception class
