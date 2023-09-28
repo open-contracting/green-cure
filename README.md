@@ -21,18 +21,24 @@ Download data, for example:
 Transform TED XML data to CSV, for example:
 
 ```shell
-./manage.py transform 2022 01 2022 12 2022.csv
+./manage.py xml-to-csv 2022 01 2022 12 2022.csv
+```
+
+Extract sentences from CSV, for example:
+
+```shell
+./manage.py csv-to-corpus 2022.csv corpus.csv
 ```
 
 Perform a semantic similarity search, for example:
 
 ```shell
-./manage.py search 2022.csv queries.csv 391
+./manage.py search corpus.csv queries.csv 391
 ```
 
 ## Exploration
 
-[Install qsv](https://github.com/jqnatividad/qsv#installation-options).
+[Install qsv.](https://github.com/jqnatividad/qsv#installation-options)
 
 Check the frequencies of values in columns using codelists:
 

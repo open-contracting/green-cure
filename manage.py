@@ -17,8 +17,6 @@ import click
 from lxml import etree
 from sentence_transformers import SentenceTransformer, util
 
-CACHE_VERSION = 1
-
 now = datetime.datetime.now(tz=datetime.UTC)
 directory = Path(__file__).resolve().parent / "data"
 
@@ -48,27 +46,6 @@ def timed(message):
     click.echo(f"{message}... ", nl=False)
     yield
     click.echo(f"{time.time() - start:.2f}s")
-
-
-@cache
-def model():
-    return SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
-
-
-def cached(file, message, function):
-    cache = Path(f"{file.name}-{os.stat(file.name).st_mtime}-v{CACHE_VERSION}.pickle")
-    if cache.exists():
-        with cache.open("rb") as f:
-            return pickle.load(f)
-
-    sentences, count = function()
-
-    with timed(message.format(sentences=len(sentences), count=count)):
-        embeddings = model().encode(sentences, convert_to_tensor=True, normalize_embeddings=True)
-    with cache.open("wb") as f:
-        pickle.dump([sentences, embeddings], f, protocol=pickle.HIGHEST_PROTOCOL)
-
-    return sentences, embeddings
 
 
 @cli.command()
@@ -103,7 +80,7 @@ def download(startyear, startmonth, endyear, endmonth):
 @click.argument("endyear", type=click.IntRange(2015, now.year))
 @click.argument("endmonth", type=click.IntRange(1, 12))
 @click.argument("file", type=click.File("w"))
-def transform(startyear, startmonth, endyear, endmonth, file):
+def xml_to_csv(startyear, startmonth, endyear, endmonth, file):
     """
     Transform monthly packages in the data/ directory to a CSV file.
     """
@@ -269,39 +246,66 @@ def transform(startyear, startmonth, endyear, endmonth, file):
 
 
 @cli.command()
-@click.argument("file", type=click.File())
-@click.argument("requirements", type=click.File())
+@click.argument("infile", type=click.File())
+@click.argument("outfile", type=click.File("w"))
 @click.argument("cpv")
-def search(file, requirements, cpv):
+def csv_to_corpus(infile, outfile, cpv):
     """
-    Calculate which rows of a CSV file match the CPV code and any green requirements.
+    Extract sentences from the rows of a CSV file that match the CPV code, one line per sentence.
+    """
+    reader = csv.DictReader(infile)
+    cpv_key = f"CPV{len(cpv)}"
+    newline = re.compile(r"\n+")
+    rowcount = 0
+
+    for row in reader:
+        if row[cpv_key] != cpv:
+            continue
+        if row["TECHNICAL_PROFESSIONAL_INFO_ANY"] != "True":
+            continue
+        rowcount += 1
+        for line in newline.split(row["TECHNICAL_PROFESSIONAL_INFO"]):
+            for sentence in line.split(". "):
+                outfile.write(f"{sentence}\n")
+
+    click.echo(f"{rowcount} rows match", err=True)
+
+
+@cli.command()
+@click.argument("corpusfile", type=click.File())
+@click.argument("queriesfile", type=click.File())
+def search(corpus_file, queries_file):
+    """
+    Calculate which sentences match the queries.
     """
 
-    # https://huggingface.co/models?pipeline_tag=sentence-similarity&sort=trending&search=multilingual
-    # intfloat/multilingual-e5-* don't perform well. Use sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2 or
-    # sentence-transformers/paraphrase-multilingual-mpnet-base-v2.
-    def load_queries():
-        return requirements.read().splitlines(), 0
+    @cache
+    def model():
+        # https://huggingface.co/models?pipeline_tag=sentence-similarity&sort=trending&search=multilingual
+        # intfloat/multilingual-e5-* don't perform well. Can also use paraphrase-multilingual-mpnet-base-v2.
+        return SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
 
-    def load_corpus():
-        sentences = []
-        reader = csv.DictReader(file)
-        cpv_key = f"CPV{len(cpv)}"
-        newline = re.compile(r"\n+")
-        rowcount = 0
-        for row in reader:
-            if row[cpv_key] != cpv:
-                continue
-            if row["TECHNICAL_PROFESSIONAL_INFO_ANY"] != "True":
-                continue
-            rowcount += 1
-            for line in newline.split(row["TECHNICAL_PROFESSIONAL_INFO"]):
-                sentences.extend(line.split(". "))
+    def cached(file):
+        mtime = os.stat(file.name).st_mtime
 
-        return sentences, rowcount
+        cache = Path(f"{file.name}.pickle")
+        if cache.exists():
+            with cache.open("rb") as f:
+                cache_mtime, sentences, embeddings = pickle.load(f)
+                if cache_mtime == mtime:
+                    return sentences, embeddings
 
-    queries, query_embeddings = cached(requirements, "Encoding {sentences} queries", load_queries)
-    corpus, corpus_embeddings = cached(file, "Encoding {sentences} sentences from {count} procedures", load_corpus)
+        sentences = file.read().splitlines()
+
+        with timed(f"Encoding {len(sentences)} sentences from {file.name}"):
+            embeddings = model().encode(sentences, convert_to_tensor=True, normalize_embeddings=True)
+        with cache.open("wb") as f:
+            pickle.dump([mtime, sentences, embeddings], f, protocol=pickle.HIGHEST_PROTOCOL)
+
+        return sentences, embeddings
+
+    queries, query_embeddings = cached(queries_file)
+    corpus, corpus_embeddings = cached(corpus_file)
 
     with timed("Searching"):
         reponses = util.semantic_search(
