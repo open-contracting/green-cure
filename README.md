@@ -6,6 +6,12 @@
 pip install -r requirements.txt
 ```
 
+Install the [Popper](https://poppler.freedesktop.org) library for its `pdftotext` command. For example, on macOS:
+
+```
+brew install poppler
+```
+
 The commands automatically download:
 
 - [Punkt Tokenizer Models](https://www.nltk.org/nltk_data/) from [NLTK](https://www.nltk.org), for sentence splitting

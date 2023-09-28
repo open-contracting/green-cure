@@ -6,6 +6,7 @@ import functools
 import os
 import pickle
 import shutil
+import subprocess
 import tarfile
 import time
 from contextlib import closing, contextmanager
@@ -328,6 +329,7 @@ def csv2corpus(infile, outfile, cpv):
             if row[cpv_key] != cpv:
                 continue
             matching += 1
+
             if not any(row[f"{column}_ANY"] == "True" for column in columns):
                 continue
             rowcount += 1
@@ -339,8 +341,8 @@ def csv2corpus(infile, outfile, cpv):
                     for text in ast.literal_eval(row[column]):
                         for sentence in tokenize.sent_tokenize(text, language=language):
                             if len(sentence) > SENTENCE_MINLENGTH:
-                                columns[column] += 1
                                 sentences.add(sentence.replace("\n", " "))
+                                columns[column] += 1
 
     for sentence in sentences:
         outfile.write(f"{sentence}\n")
@@ -356,7 +358,8 @@ def csv2corpus(infile, outfile, cpv):
 @cli.command()
 @click.argument("corpusfile", type=click.File())
 @click.argument("queriesfile", type=click.File())
-def search(corpusfile, queriesfile):
+@click.argument("minscore", type=float)
+def search(corpusfile, queriesfile, minscore):
     """
     Calculate which sentences match the queries.
     """
@@ -389,7 +392,7 @@ def search(corpusfile, queriesfile):
     corpus, corpus_embeddings = cached(corpusfile)
 
     with timed("Searching"):
-        reponses = util.semantic_search(
+        responses = util.semantic_search(
             query_embeddings,
             corpus_embeddings,
             top_k=min(5, len(corpus)),
@@ -399,10 +402,44 @@ def search(corpusfile, queriesfile):
             corpus_chunk_size=500000,
         )
 
-    for i, reponse in enumerate(reponses):
-        click.echo(f"\nQ: {queries[i]}")
-        for hit in reponse:
-            click.echo(f"{hit['score']:.4f} {corpus[hit['corpus_id']]}")
+    matches = 0
+    for i, response in enumerate(responses):
+        if response[0]["score"] >= minscore:
+            matches += 1
+            click.echo(f"\nQ: {queries[i]}")
+            for hit in response:
+                if hit["score"] >= minscore:
+                    click.echo(f"{hit['score']:.4f} {corpus[hit['corpus_id']]}")
+    click.echo(f"\n{matches}/{len(queries)} queries match with a score >= {minscore}")
+
+
+@cli.command()
+@click.argument("infile", type=click.Path(exists=True, dir_okay=False))
+@click.argument("outfile", type=click.File("w"))
+@click.argument("firstpage", type=int)
+@click.argument("lastpage", type=int)
+def pdf2queries(infile, outfile, firstpage, lastpage):
+    if not shutil.which("pdftotext"):
+        raise click.UsageError("pdftotext command is not available. Install Poppler: https://poppler.freedesktop.org")
+
+    sentences = set()
+    total = 0
+
+    text = subprocess.check_output(
+        ["pdftotext", "-f", str(firstpage), "-l", str(lastpage), "-nopgbrk", infile, "-"], text=True
+    )
+    for sentence in tokenize.sent_tokenize(text, language="english"):
+        if len(sentence) > SENTENCE_MINLENGTH:
+            sentences.add(sentence.replace("\n", " "))
+            total += 1
+
+    for sentence in sentences:
+        outfile.write(f"{sentence}\n")
+
+    click.echo(
+        f"{len(sentences):,d} unique sentences ({total:,d} total sentences)",
+        err=True,
+    )
 
 
 if __name__ == "__main__":
