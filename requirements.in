@@ -1,7 +1,13 @@
-black
 click
-isort
 lxml
-pip-tools
-ruff
+nltk
 sentence-transformers
+tabulate
+
+# Build
+pip-tools
+
+# Lint
+black
+isort
+ruff

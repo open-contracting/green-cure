@@ -1,21 +1,26 @@
 #!/usr/bin/env python
+import ast
 import csv
 import datetime
+import functools
 import os
 import pickle
-import re
 import shutil
 import tarfile
 import time
 from contextlib import closing, contextmanager
-from functools import cache
 from pathlib import Path
 from urllib.error import URLError
 from urllib.request import urlopen
 
 import click
+import nltk
+import tabulate
 from lxml import etree
+from nltk import tokenize
 from sentence_transformers import SentenceTransformer, util
+
+SENTENCE_MINLENGTH = 10
 
 now = datetime.datetime.now(tz=datetime.UTC)
 directory = Path(__file__).resolve().parent / "data"
@@ -55,7 +60,7 @@ def timed(message):
 @click.argument("endmonth", type=click.IntRange(1, 12))
 def download(startyear, startmonth, endyear, endmonth):
     """
-    Write monthly packages from TED to a data/ directory.
+    Write monthly packages from Tenders Electronic Daily to a data/ directory.
     """
     directory.mkdir(exist_ok=True)
 
@@ -80,7 +85,7 @@ def download(startyear, startmonth, endyear, endmonth):
 @click.argument("endyear", type=click.IntRange(2015, now.year))
 @click.argument("endmonth", type=click.IntRange(1, 12))
 @click.argument("file", type=click.File("w"))
-def xml_to_csv(startyear, startmonth, endyear, endmonth, file):
+def xml2csv(startyear, startmonth, endyear, endmonth, file):
     """
     Transform monthly packages in the data/ directory to a CSV file.
     """
@@ -207,7 +212,7 @@ def xml_to_csv(startyear, startmonth, endyear, endmonth, file):
                         p = lefti.xpath(f"./ns:{element}//text()", **kw)
                         common[f"{element}_ANY"] = bool(p)
                         if p:
-                            common[element] = "\n\n".join(p)
+                            common[element] = p
 
                 lots = obj.xpath("./ns:OBJECT_DESCR", **kw)
                 assert len(lots), "/OBJECT_CONTRACT/OBJECT_DESCR is missing"
@@ -240,7 +245,7 @@ def xml_to_csv(startyear, startmonth, endyear, endmonth, file):
                     p = lot.xpath("./ns:CRITERIA_CANDIDATE//text()", **kw)
                     row["CRITERIA_CANDIDATE_ANY"] = bool(p)
                     if p:
-                        row["CRITERIA_CANDIDATE"] = "\n\n".join(p)
+                        row["CRITERIA_CANDIDATE"] = p
 
                     writer.writerow(row)
 
@@ -249,39 +254,115 @@ def xml_to_csv(startyear, startmonth, endyear, endmonth, file):
 @click.argument("infile", type=click.File())
 @click.argument("outfile", type=click.File("w"))
 @click.argument("cpv")
-def csv_to_corpus(infile, outfile, cpv):
+def csv2corpus(infile, outfile, cpv):
     """
     Extract sentences from the rows of a CSV file that match the CPV code, one line per sentence.
     """
+    languages = {
+        # ls ~/nltk_data/tokenizers/punkt/*.pickle
+        # Also covers "malayalam", but conflicts with "ML" for "maltese".
+        # Germanic
+        "DA": "danish",
+        "NL": "dutch",
+        "EN": "english",
+        "DE": "german",
+        "NO": "norwegian",
+        "SV": "swedish",
+        # Hellenic
+        "EL": "greek",
+        # Italic
+        "FR": "french",
+        "IT": "italian",
+        "PT": "portuguese",
+        "ES": "spanish",
+        # Slavic
+        "CS": "czech",
+        "PL": "polish",
+        "RU": "russian",
+        "SL": "slovene",
+        # Uralic
+        "ET": "estonian",
+        "FI": "finnish",
+        # Turkic
+        "TR": "turkish",
+        # Languages not supported by NLTK.
+        # Baltic
+        "LV": "slovene",  # latvian
+        "LT": "slovene",  # lithuanian
+        # Celtic
+        "GA": "italian",  # irish
+        # Italic
+        "RO": "italian",  # romanian
+        # Semitic
+        "ML": "spanish",  # maltese, should be "MT"
+        # Slavic
+        "BG": "slovene",  # bulgarian
+        "HR": "slovene",  # croatian
+        "SK": "czech",  # slovak
+        # Uralic
+        "HU": "finnish",  # hungarian
+    }
+
+    nltk.download("punkt")
+
+    columns = {
+        "SUITABILITY": 0,
+        "ECONOMIC_FINANCIAL_INFO": 0,
+        "ECONOMIC_FINANCIAL_MIN_LEVEL": 0,
+        "TECHNICAL_PROFESSIONAL_INFO": 0,
+        "TECHNICAL_PROFESSIONAL_MIN_LEVEL": 0,
+        "PERFORMANCE_CONDITIONS": 0,
+        "CRITERIA_CANDIDATE": 0,
+        "AC_QUALITY": 0,
+        "AC_COST": 0,
+    }
+
     reader = csv.DictReader(infile)
     cpv_key = f"CPV{len(cpv)}"
-    newline = re.compile(r"\n+")
+    sentences = set()
+    matching = 0
     rowcount = 0
 
-    for row in reader:
-        if row[cpv_key] != cpv:
-            continue
-        if row["TECHNICAL_PROFESSIONAL_INFO_ANY"] != "True":
-            continue
-        rowcount += 1
-        for line in newline.split(row["TECHNICAL_PROFESSIONAL_INFO"]):
-            for sentence in line.split(". "):
-                outfile.write(f"{sentence}\n")
+    with timed("Extracting"):
+        for row in reader:
+            if row[cpv_key] != cpv:
+                continue
+            matching += 1
+            if not any(row[f"{column}_ANY"] == "True" for column in columns):
+                continue
+            rowcount += 1
 
-    click.echo(f"{rowcount} rows match", err=True)
+            language = languages[row["LG"]]
+
+            for column in columns:
+                if row[column]:
+                    for text in ast.literal_eval(row[column]):
+                        for sentence in tokenize.sent_tokenize(text, language=language):
+                            if len(sentence) > SENTENCE_MINLENGTH:
+                                columns[column] += 1
+                                sentences.add(sentence.replace("\n", " "))
+
+    for sentence in sentences:
+        outfile.write(f"{sentence}\n")
+
+    click.echo(
+        f"{len(sentences):,d} unique sentences ({sum(columns.values()):,d} total sentences) "
+        f"from {rowcount:,d} non-empty rows ({matching:,d} total rows) with CPV {cpv}",
+        err=True,
+    )
+    click.echo(tabulate.tabulate(columns.items()))
 
 
 @cli.command()
 @click.argument("corpusfile", type=click.File())
 @click.argument("queriesfile", type=click.File())
-def search(corpus_file, queries_file):
+def search(corpusfile, queriesfile):
     """
     Calculate which sentences match the queries.
     """
 
-    @cache
+    @functools.cache
     def model():
-        # https://huggingface.co/models?pipeline_tag=sentence-similarity&sort=trending&search=multilingual
         # intfloat/multilingual-e5-* don't perform well. Can also use paraphrase-multilingual-mpnet-base-v2.
         return SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
 
@@ -297,15 +378,15 @@ def search(corpus_file, queries_file):
 
         sentences = file.read().splitlines()
 
-        with timed(f"Encoding {len(sentences)} sentences from {file.name}"):
+        with timed(f"Encoding {len(sentences):,d} sentences from {file.name}"):
             embeddings = model().encode(sentences, convert_to_tensor=True, normalize_embeddings=True)
         with cache.open("wb") as f:
             pickle.dump([mtime, sentences, embeddings], f, protocol=pickle.HIGHEST_PROTOCOL)
 
         return sentences, embeddings
 
-    queries, query_embeddings = cached(queries_file)
-    corpus, corpus_embeddings = cached(corpus_file)
+    queries, query_embeddings = cached(queriesfile)
+    corpus, corpus_embeddings = cached(corpusfile)
 
     with timed("Searching"):
         reponses = util.semantic_search(
