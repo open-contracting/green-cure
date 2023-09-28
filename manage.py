@@ -78,37 +78,39 @@ def transform(startyear, startmonth, endyear, endmonth, file):
         file,
         [
             "MONTH",
-            "FORM",  # codelist
-            "LG",  # codelist
-            "URI_DOC",  # text
+            "FORM",
+            "LG",
+            "URI_DOC",
+            "URL_DOCUMENT_ANY",
+            "URL_DOCUMENT",
             "CPV2",
             "CPV3",
             "CPV4",
             "CPV5",
-            "CPV_MAIN",  # codelist
-            "SUITABILITY_ANY",  # boolean
-            "SUITABILITY",  # text
-            "ECONOMIC_CRITERIA_DOC",  # boolean
-            "ECONOMIC_FINANCIAL_INFO_ANY",  # boolean
-            "ECONOMIC_FINANCIAL_INFO",  # text
-            "ECONOMIC_FINANCIAL_MIN_LEVEL_ANY",  # boolean
-            "ECONOMIC_FINANCIAL_MIN_LEVEL",  # text
-            "TECHNICAL_CRITERIA_DOC",  # boolean
-            "TECHNICAL_PROFESSIONAL_INFO_ANY",  # boolean
-            "TECHNICAL_PROFESSIONAL_INFO",  # text
-            "TECHNICAL_PROFESSIONAL_MIN_LEVEL_ANY",  # boolean
-            "TECHNICAL_PROFESSIONAL_MIN_LEVEL",  # text
-            "PERFORMANCE_CONDITIONS_ANY",  # boolean
-            "PERFORMANCE_CONDITIONS",  # text
-            "CPV_ADDITIONAL",  # colon-separated codelist
-            "AC_PROCUREMENT_DOC",  # boolean
-            "AC_PRICE",  # boolean
-            "AC_QUALITY_ANY",  # boolean
-            "AC_QUALITY",  # text
-            "AC_COST_ANY",  # boolean
-            "AC_COST",  # text
-            "CRITERIA_CANDIDATE_ANY",  # boolean
-            "CRITERIA_CANDIDATE",  # text
+            "CPV_MAIN",
+            "SUITABILITY_ANY",
+            "SUITABILITY",
+            "ECONOMIC_CRITERIA_DOC",
+            "ECONOMIC_FINANCIAL_INFO_ANY",
+            "ECONOMIC_FINANCIAL_INFO",
+            "ECONOMIC_FINANCIAL_MIN_LEVEL_ANY",
+            "ECONOMIC_FINANCIAL_MIN_LEVEL",
+            "TECHNICAL_CRITERIA_DOC",
+            "TECHNICAL_PROFESSIONAL_INFO_ANY",
+            "TECHNICAL_PROFESSIONAL_INFO",
+            "TECHNICAL_PROFESSIONAL_MIN_LEVEL_ANY",
+            "TECHNICAL_PROFESSIONAL_MIN_LEVEL",
+            "PERFORMANCE_CONDITIONS_ANY",
+            "PERFORMANCE_CONDITIONS",
+            "CPV_ADDITIONAL",
+            "AC_PROCUREMENT_DOC",
+            "AC_PRICE",
+            "AC_QUALITY_ANY",
+            "AC_QUALITY",
+            "AC_COST_ANY",
+            "AC_COST",
+            "CRITERIA_CANDIDATE_ANY",
+            "CRITERIA_CANDIDATE",
         ],
     )
     writer.writeheader()
