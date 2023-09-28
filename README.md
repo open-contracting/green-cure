@@ -38,13 +38,19 @@ Transform TED XML data to CSV, for example:
 Extract sentences from CSV, for example:
 
 ```shell
-./manage.py csv2corpus 2022.csv corpus.csv
+./manage.py csv2corpus 2022.csv corpus-furniture.csv 391
+```
+
+Extract green requirements from [PDF documents](https://green-business.ec.europa.eu/green-public-procurement/gpp-criteria-and-requirements_en), for example:
+
+```shell
+./manage.py pdf2queries 'Criteria for Furniture.pdf' queries-furniture.csv 6 27
 ```
 
 Perform a semantic similarity search, for example:
 
 ```shell
-./manage.py search corpus.csv queries.csv 391
+./manage.py search corpus-furniture.csv queries-furniture.csv 0.7
 ```
 
 ## Exploration

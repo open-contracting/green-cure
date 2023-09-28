@@ -254,10 +254,10 @@ def xml2csv(startyear, startmonth, endyear, endmonth, file):
 @cli.command()
 @click.argument("infile", type=click.File())
 @click.argument("outfile", type=click.File("w"))
-@click.argument("cpv")
+@click.argument("cpv", nargs=-1)
 def csv2corpus(infile, outfile, cpv):
     """
-    Extract sentences from the rows of a CSV file that match the CPV code, one line per sentence.
+    Extract sentences from the rows of a CSV file that match the CPV code(s), one line per sentence.
     """
     languages = {
         # ls ~/nltk_data/tokenizers/punkt/*.pickle
@@ -319,14 +319,13 @@ def csv2corpus(infile, outfile, cpv):
     }
 
     reader = csv.DictReader(infile)
-    cpv_key = f"CPV{len(cpv)}"
     sentences = set()
     matching = 0
     rowcount = 0
 
     with timed("Extracting"):
         for row in reader:
-            if row[cpv_key] != cpv:
+            if not any(row[f"CPV{len(code)}"] == code if len(code) <= 5 else row["CPV_MAIN"] == code for code in cpv):
                 continue
             matching += 1
 
@@ -349,7 +348,7 @@ def csv2corpus(infile, outfile, cpv):
 
     click.echo(
         f"{len(sentences):,d} unique sentences ({sum(columns.values()):,d} total sentences) "
-        f"from {rowcount:,d} non-empty rows ({matching:,d} total rows) with CPV {cpv}",
+        f"from {rowcount:,d} non-empty rows ({matching:,d} total rows) with CPV {' '.join(cpv)}",
         err=True,
     )
     click.echo(tabulate.tabulate(columns.items()))
