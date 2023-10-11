@@ -3,11 +3,3 @@ lxml
 nltk
 sentence-transformers
 tabulate
-
-# Build
-pip-tools
-
-# Lint
-black
-isort
-ruff
