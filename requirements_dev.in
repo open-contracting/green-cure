@@ -1,5 +1,4 @@
 -r requirements.txt
-black
-isort
 pip-tools
+pre-commit
 ruff
