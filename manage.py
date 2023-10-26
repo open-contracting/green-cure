@@ -605,7 +605,7 @@ def download_do(outdir):
                     click.echo("☒", nl=False)
 
     path = outdir / "documents.csv"
-    click.echo(f"Writing {len(documents)} rows to {path}")
+    click.secho(f"Writing {len(documents)} rows to {path}...", fg="green")
     with path.open("w") as f:
         fieldnames = ["id", "title", "document_id", "document_name", "document_type", "document_url", "url"]
         writer = csv.DictWriter(f, fieldnames=fieldnames)
@@ -638,11 +638,11 @@ def download_do(outdir):
     #   1 Informe pericial que justifique el uso de la excepción
     #   1 Ofertas técnicas
     #   1 Publicación en periódicos de circulación nacional
-    click.echo(f"Skipped {len(document_types_skipped)} document types:")
+    click.secho(f"Skipped {len(document_types_skipped)} document types:", fg="yellow")
     for document_type, count in sorted(document_types_skipped.items(), reverse=True, key=lambda item: item[1]):
         click.echo(f"{count:3d} {document_type}")
 
-    click.echo(f"No documents found for {len(no_documents_found)} contracting processes:")
+    click.secho(f"No documents found for {len(no_documents_found)} contracting processes:", fg="yellow")
     for url in no_documents_found:
         click.echo(url)
 
