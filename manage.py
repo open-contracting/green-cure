@@ -3,12 +3,14 @@ import ast
 import csv
 import datetime
 import functools
+import json
 import os
 import pickle
 import shutil
 import subprocess
 import tarfile
 import time
+from collections import defaultdict
 from contextlib import closing, contextmanager
 from pathlib import Path
 from urllib.error import URLError
@@ -16,7 +18,9 @@ from urllib.request import urlopen
 
 import click
 import nltk
+import requests
 import tabulate
+from bs4 import BeautifulSoup
 from lxml import etree
 from nltk import tokenize
 from sentence_transformers import SentenceTransformer, util
@@ -24,7 +28,8 @@ from sentence_transformers import SentenceTransformer, util
 SENTENCE_MINLENGTH = 10
 
 now = datetime.datetime.now(tz=datetime.UTC)
-directory = Path(__file__).resolve().parent / "data"
+basedir = Path(__file__).resolve().parent
+datadir = basedir / "data"
 
 
 @click.group()
@@ -63,10 +68,10 @@ def download(startyear, startmonth, endyear, endmonth):
     """
     Write monthly packages from Tenders Electronic Daily to a data/ directory.
     """
-    directory.mkdir(exist_ok=True)
+    datadir.mkdir(exist_ok=True)
 
     for year, month in yearmonths(startyear, startmonth, endyear, endmonth):
-        path = directory / f"{year}-{month:02d}.tar.gz"
+        path = datadir / f"{year}-{month:02d}.tar.gz"
         if path.exists():
             click.echo(f"{path.name} exists")
             continue
@@ -134,7 +139,7 @@ def xml2csv(startyear, startmonth, endyear, endmonth, file):
     writer.writeheader()
 
     for year, month in yearmonths(startyear, startmonth, endyear, endmonth):
-        path = directory / f"{year}-{month:02d}.tar.gz"
+        path = datadir / f"{year}-{month:02d}.tar.gz"
         if not path.exists():
             click.echo(f"{path.name} doesn't exist, skipping...", err=True)
             continue
@@ -439,6 +444,134 @@ def pdf2queries(infile, outfile, firstpage, lastpage):
         f"{len(sentences):,d} unique sentences ({total:,d} total sentences)",
         err=True,
     )
+
+
+@cli.command()
+@click.argument("outdir", type=click.Path(exists=False, path_type=Path))
+def download_do(outdir):
+    with (basedir / "assets" / "do_post.json").open() as f:
+        post_data = json.load(f)
+
+    response = requests.post(
+        "https://wabi-us-east-a-primary-api.analysis.windows.net/public/reports/querydata?synchronous=true",
+        # This request data is copied from the web browser.
+        json=post_data,
+        # The other headers from the web browser are not required.
+        headers={"X-PowerBI-ResourceKey": "6d07fc9a-46df-4b72-9509-ea5c80c85178"},
+    )
+    response.raise_for_status()
+
+    """
+    Responses look like:
+
+    .. code-block:: json
+
+       {
+           "jobIds": ["UUID"],
+           "results": [
+               {
+                   "jobId": "UUID",
+                   "result": {
+                       "data": {
+                           "timestamp": "2023-10-10T18:22:39.397Z",
+                           "rootActivityId": "UUID",
+                           "descriptor": {...},
+                           "metrics": {...}, // start times, end times, row counts for operations
+                           "fromCache": false,
+                           "dsr": {
+                               "Version": 2,
+                               "MinorVersion": 1,
+                               "DS": [
+                                   {
+                                       "N": "DS0",
+                                       "PH": [
+                                           {
+                                               "DM0": [
+                                                   {
+                                                       "S": [...],
+                                                       "C": [...]
+                                                   },
+                                                   {
+                                                       "C": [
+                                                           // a row of values
+                                                       ],
+                                                       "R": 123
+                                                   },
+                                                   ...
+                                               ]
+                                           }
+                                       ],
+                                       "IC": true,
+                                       "HAD": true,
+                                       "ValueDicts": {
+                                           "D0": [
+                                               "...",
+                                               ...
+                                           ],
+                                           ...
+                                       }
+                                   }
+                               ]
+                           }
+                       }
+                   }
+               }
+           ]
+       }
+    """
+
+    entries = response.json()["results"][0]["result"]["data"]["dsr"]["DS"][0]["PH"][0]["DM0"]
+
+    outdir.mkdir(parents=True, exist_ok=True)
+
+    base_url = "https://comunidad.comprasdominicana.gob.do/"
+    document_types_skipped = defaultdict(int)
+    for entry in entries:
+        for url in filter(lambda text: str(text).startswith("http"), entry["C"]):
+            response = requests.get(url, headers={"Accept-Language": "es-ES,es;q=0.9,en;q=0.8"})
+            response.raise_for_status()
+
+            soup = BeautifulSoup(response.content, "html.parser")
+            tender_title = soup.find(id="fdsRequestSummaryInfo_tblDetail_trRowName_tdCell2_spnRequestName").text
+            process_id = soup.find(id="fdsRequestSummaryInfo_tblDetail_trRowRef_tdCell2_spnRequestReference").text
+
+            click.echo(f"Downloading files for {tender_title} from {url}")
+            for row in soup.find(id="grdGridDocumentList_tbl").find_all("tr"):
+                if row.find("th"):
+                    continue
+
+                document_name = row.find("td", id="grdGridDocumentListtd_thColumnDocumentName").text
+                document_type = row.find("td", id="grdGridDocumentListtd_thColumnDocumentType").text
+                document_url = (
+                    row.find("td", id="grdGridDocumentListtd_thColumnDownloadDocument")
+                    .find("a")["onclick"]
+                    .replace("javascript:getAction('", "")
+                    .replace("',true);", "")
+                    .replace("' + '", "")
+                )
+
+                if document_type != "Especificaciones/Ficha Técnica":
+                    document_types_skipped[document_type] += 1
+                else:
+                    continue
+                    response = requests.get(f"{base_url}{document_url}")
+                    response.raise_for_status()
+
+                    soup = BeautifulSoup(response.content, "html.parser")
+                    pdf_url = soup.find("script").text.replace("window.location.href = ", "").replace("'", "")
+
+                    response = requests.get(f"{base_url}{pdf_url}")
+                    response.raise_for_status()
+
+                    filename = outdir / f"{process_id}-{tender_title[:100]}-{document_name}".replace(" ", "-").replace(
+                        "/", "-"
+                    ).replace('"', "")
+                    with filename.open("wb") as f:
+                        f.write(response.content)
+
+    click.echo("Skipped document types:")
+    for document_type, count in sorted(document_types_skipped.items(), key=lambda item: item[1]):
+        click.echo(f"{count:3d} {document_type}")
 
 
 if __name__ == "__main__":

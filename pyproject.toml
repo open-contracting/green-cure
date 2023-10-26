@@ -19,6 +19,7 @@ ignore = [
   "S101",  # Use of `assert` detected
   "S603",  # subprocess
   "S607",  # partial executable path
+  "S113",  # requests timeout
   "S301",  # pickle
   "S310",  # Audit URL open for permitted schemes
   "S320",  # Using `lxml` to parse untrusted data
