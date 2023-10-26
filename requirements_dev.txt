@@ -4,6 +4,8 @@
 #
 #    pip-compile requirements_dev.in
 #
+beautifulsoup4==4.12.2
+    # via -r requirements.txt
 build==1.0.3
     # via pip-tools
 certifi==2023.7.22
@@ -138,6 +140,10 @@ sentencepiece==0.1.99
     # via
     #   -r requirements.txt
     #   sentence-transformers
+soupsieve==2.5
+    # via
+    #   -r requirements.txt
+    #   beautifulsoup4
 sympy==1.12
     # via
     #   -r requirements.txt

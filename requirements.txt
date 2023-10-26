@@ -4,6 +4,8 @@
 #
 #    pip-compile
 #
+beautifulsoup4==4.12.2
+    # via -r requirements.in
 certifi==2023.7.22
     # via requests
 charset-normalizer==3.2.0
@@ -66,6 +68,7 @@ regex==2023.8.8
     #   transformers
 requests==2.31.0
     # via
+    #   -r requirements.in
     #   huggingface-hub
     #   torchvision
     #   transformers
@@ -81,6 +84,8 @@ sentence-transformers==2.2.2
     # via -r requirements.in
 sentencepiece==0.1.99
     # via sentence-transformers
+soupsieve==2.5
+    # via beautifulsoup4
 sympy==1.12
     # via torch
 tabulate==0.9.0
