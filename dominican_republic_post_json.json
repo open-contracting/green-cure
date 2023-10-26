@@ -1,0 +1,322 @@
+{
+  "version": "1.0.0",
+  "queries": [
+    {
+      "Query": {
+        "Commands": [
+          {
+            "SemanticQueryDataShapeCommand": {
+              "Query": {
+                "Version": 2,
+                "From": [
+                  {
+                    "Name": "p",
+                    "Entity": "ProcesosPortal",
+                    "Type": 0
+                  },
+                  {
+                    "Name": "t",
+                    "Entity": "Tabla de medidas",
+                    "Type": 0
+                  },
+                  {
+                    "Name": "c",
+                    "Entity": "ContratosPortal",
+                    "Type": 0
+                  }
+                ],
+                "Select": [
+                  {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Source": "p"
+                        }
+                      },
+                      "Property": "UNIDAD_COMPRA"
+                    },
+                    "Name": "ProcesosPortal.UNIDAD_COMPRA"
+                  },
+                  {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Source": "p"
+                        }
+                      },
+                      "Property": "CODIGO_PROCESO"
+                    },
+                    "Name": "ProcesosPortal.CODIGO_PROCESO"
+                  },
+                  {
+                    "Aggregation": {
+                      "Expression": {
+                        "Column": {
+                          "Expression": {
+                            "SourceRef": {
+                              "Source": "p"
+                            }
+                          },
+                          "Property": "MONTO_ESTIMADO"
+                        }
+                      },
+                      "Function": 0
+                    },
+                    "Name": "Sum(ProcesosPortal.MONTO_ESTIMADO)"
+                  },
+                  {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Source": "p"
+                        }
+                      },
+                      "Property": "ESTADO_PROCESO"
+                    },
+                    "Name": "ProcesosPortal.ESTADO_PROCESO"
+                  },
+                  {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Source": "p"
+                        }
+                      },
+                      "Property": "MODALIDAD"
+                    },
+                    "Name": "ProcesosPortal.MODALIDAD"
+                  },
+                  {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Source": "p"
+                        }
+                      },
+                      "Property": "DIRIGIDO_MIPYMES"
+                    },
+                    "Name": "ProcesosPortal.DIRIGIDO_MIPYMES"
+                  },
+                  {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Source": "p"
+                        }
+                      },
+                      "Property": "DIRIGIDO_MIPYMES_MUJERES"
+                    },
+                    "Name": "ProcesosPortal.DIRIGIDO_MIPYMES_MUJERES"
+                  },
+                  {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Source": "t"
+                        }
+                      },
+                      "Property": "Enlace"
+                    },
+                    "Name": "Tabla de medidas.Enlace"
+                  },
+                  {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Source": "p"
+                        }
+                      },
+                      "Property": "CARATULA"
+                    },
+                    "Name": "ProcesosPortal.CARATULA"
+                  },
+                  {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Source": "p"
+                        }
+                      },
+                      "Property": "Fecha de publicación"
+                    },
+                    "Name": "ProcesosPortal.Fecha de publicación",
+                    "NativeReferenceName": "Fecha de publicación"
+                  },
+                  {
+                    "Aggregation": {
+                      "Expression": {
+                        "Column": {
+                          "Expression": {
+                            "SourceRef": {
+                              "Source": "p"
+                            }
+                          },
+                          "Property": "EstadoColor"
+                        }
+                      },
+                      "Function": 3
+                    },
+                    "Name": "Min(ProcesosPortal.EstadoColor)"
+                  },
+                  {
+                    "Aggregation": {
+                      "Expression": {
+                        "Column": {
+                          "Expression": {
+                            "SourceRef": {
+                              "Source": "p"
+                            }
+                          },
+                          "Property": "URL"
+                        }
+                      },
+                      "Function": 3
+                    },
+                    "Name": "Min(ProcesosPortal.URL)"
+                  }
+                ],
+                "Where": [
+                  {
+                    "Condition": {
+                      "StartsWith": {
+                        "Left": {
+                          "Column": {
+                            "Expression": {
+                              "SourceRef": {
+                                "Source": "p"
+                              }
+                            },
+                            "Property": "COMPRA_VERDE"
+                          }
+                        },
+                        "Right": {
+                          "Literal": {
+                            "Value": "'Si'"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "Condition": {
+                      "Not": {
+                        "Expression": {
+                          "Contains": {
+                            "Left": {
+                              "Column": {
+                                "Expression": {
+                                  "SourceRef": {
+                                    "Source": "p"
+                                  }
+                                },
+                                "Property": "ESTADO_PROCESO"
+                              }
+                            },
+                            "Right": {
+                              "Literal": {
+                                "Value": "'Aun no publicado'"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "Condition": {
+                      "In": {
+                        "Expressions": [
+                          {
+                            "Column": {
+                              "Expression": {
+                                "SourceRef": {
+                                  "Source": "c"
+                                }
+                              },
+                              "Property": "ERROR_MONTO"
+                            }
+                          }
+                        ],
+                        "Values": [
+                          [
+                            {
+                              "Literal": {
+                                "Value": "null"
+                              }
+                            }
+                          ]
+                        ]
+                      }
+                    }
+                  }
+                ],
+                "OrderBy": [
+                  {
+                    "Direction": 2,
+                    "Expression": {
+                      "Column": {
+                        "Expression": {
+                          "SourceRef": {
+                            "Source": "p"
+                          }
+                        },
+                        "Property": "Fecha de publicación"
+                      }
+                    }
+                  }
+                ]
+              },
+              "Binding": {
+                "Primary": {
+                  "Groupings": [
+                    {
+                      "Projections": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5,
+                        6,
+                        7,
+                        8,
+                        9,
+                        10,
+                        11
+                      ]
+                    }
+                  ]
+                },
+                "DataReduction": {
+                  "DataVolume": 3,
+                  "Primary": {
+                    "Window": {
+                      "Count": 500
+                    }
+                  }
+                },
+                "SuppressedJoinPredicates": [
+                  10,
+                  11
+                ],
+                "Version": 1
+              },
+              "ExecutionMetricsKind": 1
+            }
+          }
+        ]
+      },
+      "ApplicationContext": {
+        "DatasetId": "7e8a4c72-a005-436f-b7ea-dad45ae3109d",
+        "Sources": [
+          {
+            "ReportId": "d8cbcc88-f008-4758-965f-5513e5653902",
+            "VisualId": "64746ab9a3880fd75c8d"
+          }
+        ]
+      }
+    }
+  ],
+  "cancelQueries": [],
+  "modelId": 3085215
+}
