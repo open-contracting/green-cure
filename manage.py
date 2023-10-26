@@ -517,13 +517,12 @@ def download_do(outdir):
         ]
     }
     """
-
     entries = response.json()["results"][0]["result"]["data"]["dsr"]["DS"][0]["PH"][0]["DM0"]
-
-    outdir.mkdir(parents=True, exist_ok=True)
 
     base_url = "https://comunidad.comprasdominicana.gob.do/"
     document_types_skipped = defaultdict(int)
+    outdir.mkdir(parents=True, exist_ok=True)
+
     for entry in entries:
         for url in filter(lambda text: str(text).startswith("http"), entry["C"]):
             response = requests.get(url, headers={"Accept-Language": "es-ES,es;q=0.9,en;q=0.8"})
@@ -551,7 +550,6 @@ def download_do(outdir):
                 if document_type != "Especificaciones/Ficha Técnica":
                     document_types_skipped[document_type] += 1
                 else:
-                    continue
                     response = requests.get(f"{base_url}{document_url}")
                     response.raise_for_status()
 
