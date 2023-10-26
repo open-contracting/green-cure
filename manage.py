@@ -524,6 +524,7 @@ def download_do(outdir):
     pattern = re.compile(r"documentFileId=(\d+)")
     outdir.mkdir(parents=True, exist_ok=True)
     documents = []
+    no_documents_found = []
     document_types_skipped = defaultdict(int)
 
     with timed("Downloading"):
@@ -540,6 +541,8 @@ def download_do(outdir):
                 tender_title = soup.find(id="fdsRequestSummaryInfo_tblDetail_trRowName_tdCell2_spnRequestName").text
 
                 click.echo(".", nl=False)
+                found = False
+
                 for row in soup.find(id="grdGridDocumentList_tbl").find_all("tr"):
                     if row.find("th"):
                         continue
@@ -558,6 +561,8 @@ def download_do(outdir):
                         document_types_skipped[document_type] += 1
                     else:
                         document_id = pattern.search(document_url).group(1)
+                        document_path = outdir / f"{tender_id}+{document_id}{Path(document_name).suffix.lower()}"
+                        found = True
 
                         documents.append(
                             {
@@ -570,8 +575,6 @@ def download_do(outdir):
                                 "url": url,
                             }
                         )
-
-                        document_path = outdir / f"{tender_id}+{document_id}{Path(document_name).suffix.lower()}"
 
                         if document_path.exists():
                             continue
@@ -596,6 +599,10 @@ def download_do(outdir):
 
                         with document_path.open("wb") as f:
                             f.write(response.content)
+
+                if not found:
+                    no_documents_found.append(url)
+                    click.echo("☒", nl=False)
 
     path = outdir / "documents.csv"
     click.echo(f"Writing {len(documents)} rows to {path}")
@@ -634,6 +641,10 @@ def download_do(outdir):
     click.echo(f"Skipped {len(document_types_skipped)} document types:")
     for document_type, count in sorted(document_types_skipped.items(), reverse=True, key=lambda item: item[1]):
         click.echo(f"{count:3d} {document_type}")
+
+    click.echo(f"No documents found for {len(no_documents_found)} contracting processes:")
+    for url in no_documents_found:
+        click.echo(url)
 
 
 if __name__ == "__main__":
