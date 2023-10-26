@@ -6,6 +6,7 @@ import functools
 import json
 import os
 import pickle
+import re
 import shutil
 import subprocess
 import tarfile
@@ -519,53 +520,91 @@ def download_do(outdir):
     """
     entries = response.json()["results"][0]["result"]["data"]["dsr"]["DS"][0]["PH"][0]["DM0"]
 
-    base_url = "https://comunidad.comprasdominicana.gob.do/"
-    document_types_skipped = defaultdict(int)
+    base_url = "https://comunidad.comprasdominicana.gob.do"
+    pattern = re.compile(r"documentFileId=(\d+)")
     outdir.mkdir(parents=True, exist_ok=True)
+    documents = []
+    document_types_skipped = defaultdict(int)
 
-    for entry in entries:
-        for url in filter(lambda text: str(text).startswith("http"), entry["C"]):
-            response = requests.get(url, headers={"Accept-Language": "es-ES,es;q=0.9,en;q=0.8"})
-            response.raise_for_status()
+    with timed("Downloading"):
+        for entry in entries:
+            for url in filter(lambda value: str(value).startswith("http"), entry["C"]):
+                # Accept-Language must be set for document types to appear correctly (English is often empty).
+                #
+                # /Public/Tendering/OpportunityDetail/Index?noticeUID=DO1.NTC.1305239
+                response = requests.get(url, headers={"Accept-Language": "es"})
+                response.raise_for_status()
 
-            soup = BeautifulSoup(response.content, "html.parser")
-            tender_title = soup.find(id="fdsRequestSummaryInfo_tblDetail_trRowName_tdCell2_spnRequestName").text
-            process_id = soup.find(id="fdsRequestSummaryInfo_tblDetail_trRowRef_tdCell2_spnRequestReference").text
+                soup = BeautifulSoup(response.content, "html.parser")
+                tender_id = soup.find(id="fdsRequestSummaryInfo_tblDetail_trRowRef_tdCell2_spnRequestReference").text
+                tender_title = soup.find(id="fdsRequestSummaryInfo_tblDetail_trRowName_tdCell2_spnRequestName").text
 
-            click.echo(f"Downloading files for {tender_title} from {url}")
-            for row in soup.find(id="grdGridDocumentList_tbl").find_all("tr"):
-                if row.find("th"):
-                    continue
+                click.echo(".", nl=False)
+                for row in soup.find(id="grdGridDocumentList_tbl").find_all("tr"):
+                    if row.find("th"):
+                        continue
 
-                document_name = row.find("td", id="grdGridDocumentListtd_thColumnDocumentName").text
-                document_type = row.find("td", id="grdGridDocumentListtd_thColumnDocumentType").text
-                document_url = (
-                    row.find("td", id="grdGridDocumentListtd_thColumnDownloadDocument")
-                    .find("a")["onclick"]
-                    .replace("javascript:getAction('", "")
-                    .replace("',true);", "")
-                    .replace("' + '", "")
-                )
+                    document_name = row.find("td", id="grdGridDocumentListtd_thColumnDocumentName").text
+                    document_type = row.find("td", id="grdGridDocumentListtd_thColumnDocumentType").text
+                    document_url = (
+                        row.find("td", id="grdGridDocumentListtd_thColumnDownloadDocument")
+                        .find("a")["onclick"]
+                        .replace("javascript:getAction('", "")
+                        .replace("',true);", "")
+                        .replace("' + '", "")
+                    )
 
-                if document_type != "Especificaciones/Ficha Técnica":
-                    document_types_skipped[document_type] += 1
-                else:
-                    response = requests.get(f"{base_url}{document_url}")
-                    response.raise_for_status()
+                    if document_type != "Especificaciones/Ficha Técnica":
+                        document_types_skipped[document_type] += 1
+                    else:
+                        document_id = pattern.search(document_url).group(1)
 
-                    soup = BeautifulSoup(response.content, "html.parser")
-                    pdf_url = soup.find("script").text.replace("window.location.href = ", "").replace("'", "")
+                        documents.append(
+                            {
+                                "id": tender_id,
+                                "title": tender_title,
+                                "document_id": document_id,
+                                "document_name": document_name,
+                                "document_type": document_type,
+                                "document_url": document_url,
+                                "url": url,
+                            }
+                        )
 
-                    response = requests.get(f"{base_url}{pdf_url}")
-                    response.raise_for_status()
+                        document_path = outdir / f"{tender_id}+{document_id}{Path(document_name).suffix.lower()}"
 
-                    filename = outdir / f"{process_id}-{tender_title[:100]}-{document_name}".replace(" ", "-").replace(
-                        "/", "-"
-                    ).replace('"', "")
-                    with filename.open("wb") as f:
-                        f.write(response.content)
+                        if document_path.exists():
+                            continue
+                        click.echo("↓", nl=False)
 
-    click.echo("Skipped document types:")
+                        # /Public/Tendering/OpportunityDetail/DownloadFile?documentFileId=7364440
+                        # &mkey=554f0311_b812_4cd7_babe_ed25a7a17272
+                        response = requests.get(f"{base_url}{document_url}")
+                        response.raise_for_status()
+
+                        # Responses look like:
+                        #
+                        # <script language="javascript">window.location.href = '/Public/Archive/RetrieveFile/Index
+                        # ?DocumentId=7585910&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier='</script>
+                        soup = BeautifulSoup(response.content, "html.parser")
+                        pdf_url = soup.find("script").text.replace("window.location.href = ", "").replace("'", "")
+
+                        # /Public/Archive/RetrieveFile/Index?DocumentId=7585910&InCommunity=False
+                        # &InPaymentGateway=False&DocUniqueIdentifier=
+                        response = requests.get(f"{base_url}{pdf_url}")
+                        response.raise_for_status()
+
+                        with document_path.open("wb") as f:
+                            f.write(response.content)
+
+    path = outdir / "documents.csv"
+    click.echo(f"Writing {len(documents)} rows to {path}")
+    with path.open("w") as f:
+        fieldnames = ["id", "title", "document_id", "document_name", "document_type", "document_url", "url"]
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(documents)
+
     # As of 2023-10-26:
     #
     # 341 Otro
@@ -592,6 +631,7 @@ def download_do(outdir):
     #   1 Informe pericial que justifique el uso de la excepción
     #   1 Ofertas técnicas
     #   1 Publicación en periódicos de circulación nacional
+    click.echo(f"Skipped {len(document_types_skipped)} document types:")
     for document_type, count in sorted(document_types_skipped.items(), reverse=True, key=lambda item: item[1]):
         click.echo(f"{count:3d} {document_type}")
 
