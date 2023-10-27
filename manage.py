@@ -559,46 +559,47 @@ def download_do(outdir):
 
                     if document_type != "Especificaciones/Ficha Técnica":
                         document_types_skipped[document_type] += 1
-                    else:
-                        document_id = pattern.search(document_url).group(1)
-                        document_path = outdir / f"{tender_id}+{document_id}{Path(document_name).suffix.lower()}"
-                        found = True
+                        continue
 
-                        documents.append(
-                            {
-                                "id": tender_id,
-                                "title": tender_title,
-                                "document_id": document_id,
-                                "document_name": document_name,
-                                "document_type": document_type,
-                                "document_url": document_url,
-                                "url": url,
-                            }
-                        )
+                    document_id = pattern.search(document_url).group(1)
+                    document_path = outdir / f"{tender_id}+{document_id}{Path(document_name).suffix.lower()}"
 
-                        if document_path.exists():
-                            continue
-                        click.echo("↓", nl=False)
+                    documents.append(
+                        {
+                            "id": tender_id,
+                            "title": tender_title,
+                            "document_id": document_id,
+                            "document_name": document_name,
+                            "document_type": document_type,
+                            "document_url": document_url,
+                            "url": url,
+                        }
+                    )
 
-                        # /Public/Tendering/OpportunityDetail/DownloadFile?documentFileId=7364440
-                        # &mkey=554f0311_b812_4cd7_babe_ed25a7a17272
-                        response = requests.get(f"{base_url}{document_url}")
-                        response.raise_for_status()
+                    found = True
+                    if document_path.exists():
+                        continue
+                    click.echo("↓", nl=False)
 
-                        # Responses look like:
-                        #
-                        # <script language="javascript">window.location.href = '/Public/Archive/RetrieveFile/Index
-                        # ?DocumentId=7585910&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier='</script>
-                        soup = BeautifulSoup(response.content, "html.parser")
-                        pdf_url = soup.find("script").text.replace("window.location.href = ", "").replace("'", "")
+                    # /Public/Tendering/OpportunityDetail/DownloadFile?documentFileId=7364440
+                    # &mkey=554f0311_b812_4cd7_babe_ed25a7a17272
+                    response = requests.get(f"{base_url}{document_url}")
+                    response.raise_for_status()
 
-                        # /Public/Archive/RetrieveFile/Index?DocumentId=7585910&InCommunity=False
-                        # &InPaymentGateway=False&DocUniqueIdentifier=
-                        response = requests.get(f"{base_url}{pdf_url}")
-                        response.raise_for_status()
+                    # Responses look like:
+                    #
+                    # <script language="javascript">window.location.href = '/Public/Archive/RetrieveFile/Index
+                    # ?DocumentId=7585910&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier='</script>
+                    soup = BeautifulSoup(response.content, "html.parser")
+                    pdf_url = soup.find("script").text.replace("window.location.href = ", "").replace("'", "")
 
-                        with document_path.open("wb") as f:
-                            f.write(response.content)
+                    # /Public/Archive/RetrieveFile/Index?DocumentId=7585910&InCommunity=False
+                    # &InPaymentGateway=False&DocUniqueIdentifier=
+                    response = requests.get(f"{base_url}{pdf_url}")
+                    response.raise_for_status()
+
+                    with document_path.open("wb") as f:
+                        f.write(response.content)
 
                 if not found:
                     no_documents_found.append(url)
