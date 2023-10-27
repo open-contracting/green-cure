@@ -518,11 +518,9 @@ def download_do(outdir):
         ]
     }
     """
+    urls = set(response.json()["results"][0]["result"]["data"]["dsr"]["DS"][0]["ValueDicts"]["D9"])
     entries = response.json()["results"][0]["result"]["data"]["dsr"]["DS"][0]["PH"][0]["DM0"]
-    all_urls = response.json()["results"][0]["result"]["data"]["dsr"]["DS"][0]["ValueDicts"]["D9"]
-    for entry in entries:
-        for url in filter(lambda value: str(value).startswith("http"), entry["C"]):
-            all_urls.append(url)
+    urls.update(value for entry in entries for value in entry["C"] if str(value).startswith("http"))
 
     base_url = "https://comunidad.comprasdominicana.gob.do"
     pattern = re.compile(r"documentFileId=(\d+)")
@@ -531,8 +529,8 @@ def download_do(outdir):
     no_documents_found = []
     document_types_skipped = defaultdict(int)
 
-    with timed("Downloading"):
-        for url in all_urls:
+    with timed(f"Downloading {len(urls)} URLs"):
+        for url in urls:
             # Accept-Language must be set for document types to appear correctly (English is often empty).
             #
             # /Public/Tendering/OpportunityDetail/Index?noticeUID=DO1.NTC.1305239
