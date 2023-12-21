@@ -23,6 +23,10 @@ click==8.1.6
     #   -r requirements.txt
     #   nltk
     #   pip-tools
+cmake==3.28.1
+    # via
+    #   -r requirements.txt
+    #   triton
 distlib==0.3.7
     # via virtualenv
 filelock==3.12.4
@@ -31,15 +35,17 @@ filelock==3.12.4
     #   huggingface-hub
     #   torch
     #   transformers
+    #   triton
     #   virtualenv
 fsspec==2023.9.2
     # via
     #   -r requirements.txt
     #   huggingface-hub
-huggingface-hub==0.17.3
+huggingface-hub==0.20.1
     # via
     #   -r requirements.txt
     #   sentence-transformers
+    #   tokenizers
     #   transformers
 identify==2.5.30
     # via pre-commit
@@ -56,6 +62,10 @@ joblib==1.3.2
     #   -r requirements.txt
     #   nltk
     #   scikit-learn
+lit==17.0.6
+    # via
+    #   -r requirements.txt
+    #   triton
 lxml==4.9.3
     # via -r requirements.txt
 markupsafe==2.1.3
@@ -84,6 +94,52 @@ numpy==1.26.0
     #   sentence-transformers
     #   torchvision
     #   transformers
+nvidia-cublas-cu11==11.10.3.66
+    # via
+    #   -r requirements.txt
+    #   nvidia-cudnn-cu11
+    #   nvidia-cusolver-cu11
+    #   torch
+nvidia-cuda-cupti-cu11==11.7.101
+    # via
+    #   -r requirements.txt
+    #   torch
+nvidia-cuda-nvrtc-cu11==11.7.99
+    # via
+    #   -r requirements.txt
+    #   torch
+nvidia-cuda-runtime-cu11==11.7.99
+    # via
+    #   -r requirements.txt
+    #   torch
+nvidia-cudnn-cu11==8.5.0.96
+    # via
+    #   -r requirements.txt
+    #   torch
+nvidia-cufft-cu11==10.9.0.58
+    # via
+    #   -r requirements.txt
+    #   torch
+nvidia-curand-cu11==10.2.10.91
+    # via
+    #   -r requirements.txt
+    #   torch
+nvidia-cusolver-cu11==11.4.0.1
+    # via
+    #   -r requirements.txt
+    #   torch
+nvidia-cusparse-cu11==11.7.4.91
+    # via
+    #   -r requirements.txt
+    #   torch
+nvidia-nccl-cu11==2.14.3
+    # via
+    #   -r requirements.txt
+    #   torch
+nvidia-nvtx-cu11==11.7.91
+    # via
+    #   -r requirements.txt
+    #   torch
 packaging==23.1
     # via
     #   -r requirements.txt
@@ -154,7 +210,7 @@ threadpoolctl==3.2.0
     # via
     #   -r requirements.txt
     #   scikit-learn
-tokenizers==0.13.3
+tokenizers==0.15.0
     # via
     #   -r requirements.txt
     #   transformers
@@ -163,6 +219,7 @@ torch==2.0.1
     #   -r requirements.txt
     #   sentence-transformers
     #   torchvision
+    #   triton
 torchvision==0.15.2
     # via
     #   -r requirements.txt
@@ -174,10 +231,14 @@ tqdm==4.66.1
     #   nltk
     #   sentence-transformers
     #   transformers
-transformers==4.33.3
+transformers==4.36.0
     # via
     #   -r requirements.txt
     #   sentence-transformers
+triton==2.0.0
+    # via
+    #   -r requirements.txt
+    #   torch
 typing-extensions==4.8.0
     # via
     #   -r requirements.txt
@@ -189,8 +250,16 @@ urllib3==2.0.7
     #   requests
 virtualenv==20.24.6
     # via pre-commit
-wheel==0.41.2
-    # via pip-tools
+wheel==0.42.0
+    # via
+    #   -r requirements.txt
+    #   nvidia-cublas-cu11
+    #   nvidia-cuda-cupti-cu11
+    #   nvidia-cuda-runtime-cu11
+    #   nvidia-curand-cu11
+    #   nvidia-cusparse-cu11
+    #   nvidia-nvtx-cu11
+    #   pip-tools
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip
