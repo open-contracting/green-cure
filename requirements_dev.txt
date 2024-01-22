@@ -146,7 +146,7 @@ packaging==23.1
     #   build
     #   huggingface-hub
     #   transformers
-pillow==10.0.1
+pillow==10.2.0
     # via
     #   -r requirements.txt
     #   torchvision
