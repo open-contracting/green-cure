@@ -407,6 +407,9 @@ def search(corpusfile, queriesfile, minscore):
             corpus_chunk_size=500000,
         )
 
+    whitespace = re.compile(r"\s+")
+    remove = re.compile(r"[•]\s*")
+
     matches = 0
     for i, response in enumerate(responses):
         if response[0]["score"] >= minscore:
@@ -414,7 +417,7 @@ def search(corpusfile, queriesfile, minscore):
             click.echo(f"\nQ: {queries[i]}")
             for hit in response:
                 if hit["score"] >= minscore:
-                    click.echo(f"{hit['score']:.4f} {corpus[hit['corpus_id']]}")
+                    click.echo(f"{hit['score']:.4f} {whitespace.sub(' ', remove.sub('', corpus[hit['corpus_id']]))}")
     click.echo(f"\n{matches}/{len(queries)} queries match with a score >= {minscore}")
 
 
