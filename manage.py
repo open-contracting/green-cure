@@ -102,7 +102,8 @@ def download_ted(startyear, startmonth, endyear, endmonth):
 @click.argument("endyear", type=click.IntRange(2015, now.year))
 @click.argument("endmonth", type=click.IntRange(1, 12))
 @click.argument("file", type=click.File("w"))
-def xml2csv(startyear, startmonth, endyear, endmonth, file):
+@click.argument("cpv", nargs=-1)
+def xml2csv(startyear, startmonth, endyear, endmonth, file, cpv):
     """
     Transform monthly packages in the data/ directory to a CSV file.
     """
@@ -186,13 +187,24 @@ def xml2csv(startyear, startmonth, endyear, endmonth, file):
                     continue
 
                 obj = form.xpath("./ns:OBJECT_CONTRACT", **kw)[0]
-                cpv = obj.xpath("./ns:CPV_MAIN/ns:CPV_CODE/@CODE", **kw)[0]
+                code = obj.xpath("./ns:CPV_MAIN/ns:CPV_CODE/@CODE", **kw)[0]
 
                 # https://docs.google.com/spreadsheets/d/1pmc_3oI_teOk7FMVyLK1bKt8d8o3SkvY_Faqth4PMqg/edit
-                if cpv[:2] in ("09", "24", "33", "35", "38", "66", "71", "72", "77", "80", "85"):
+                if code[:2] in ("09", "24", "33", "35", "38", "66", "71", "72", "77", "80", "85"):
                     continue
 
                 common = {}
+
+                common["CPV2"] = code[:2]
+                common["CPV3"] = code[:3]
+                common["CPV4"] = code[:4]
+                common["CPV5"] = code[:5]
+                common["CPV_MAIN"] = code
+
+                if cpv and not any(
+                    common[f"CPV{len(code)}"] == code if len(code) <= 5 else common["CPV_MAIN"] == code for code in cpv
+                ):
+                    continue
 
                 common["MONTH"] = f"{year}-{month:02d}"
                 common["FORM"] = number
@@ -205,12 +217,6 @@ def xml2csv(startyear, startmonth, endyear, endmonth, file):
                 common["URL_DOCUMENT_ANY"] = bool(url_document)
                 if url_document:
                     common["URL_DOCUMENT"] = url_document
-
-                common["CPV2"] = cpv[:2]
-                common["CPV3"] = cpv[:3]
-                common["CPV4"] = cpv[:4]
-                common["CPV5"] = cpv[:5]
-                common["CPV_MAIN"] = cpv
 
                 # LEFTI
                 if lefti := form.xpath("./ns:LEFTI", **kw):
@@ -239,8 +245,8 @@ def xml2csv(startyear, startmonth, endyear, endmonth, file):
                     row["CPV_ADDITIONAL"] = ";".join(
                         [
                             code
-                            for cpv in lot.xpath("./ns:CPV_ADDITIONAL", **kw)
-                            for code in cpv.xpath("./ns:CPV_CODE/@CODE", **kw)
+                            for cpv_additional in lot.xpath("./ns:CPV_ADDITIONAL", **kw)
+                            for code in cpv_additional.xpath("./ns:CPV_CODE/@CODE", **kw)
                             if code != common["CPV_MAIN"]
                         ]
                     )
