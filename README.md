@@ -39,6 +39,8 @@ Extract sentences from CSV, for example:
 
 ```shell
 ./manage.py csv2corpus 2022.csv corpus-furniture.csv 391
+./manage.py csv2corpus 2022.csv corpus-textiles.csv 18 395 98311 98312 5083 5082 98313
+./manage.py csv2corpus 2022.csv corpus-cleaning.csv 90911200 90919 98341130 98341110
 ```
 
 Extract green requirements from [PDF documents](https://green-business.ec.europa.eu/green-public-procurement/gpp-criteria-and-requirements_en), for example:
