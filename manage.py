@@ -52,6 +52,13 @@ def yearmonths(startyear, startmonth, endyear, endmonth):
             yield year, month
 
 
+def sentence_generator(text, language):
+    for sentence in tokenize.sent_tokenize(text, language=language):
+        stripped = sentence.replace("\n", " ").strip()
+        if len(stripped) > SENTENCE_MINLENGTH:
+            yield stripped
+
+
 @contextmanager
 def timed(message):
     start = time.time()
@@ -65,7 +72,7 @@ def timed(message):
 @click.argument("startmonth", type=click.IntRange(1, 12))
 @click.argument("endyear", type=click.IntRange(2015, now.year))
 @click.argument("endmonth", type=click.IntRange(1, 12))
-def download(startyear, startmonth, endyear, endmonth):
+def download_ted(startyear, startmonth, endyear, endmonth):
     """
     Write monthly packages from Tenders Electronic Daily to a data/ directory.
     """
@@ -344,10 +351,9 @@ def csv2corpus(infile, outfile, cpv):
             for column in columns:
                 if row[column]:
                     for text in ast.literal_eval(row[column]):
-                        for sentence in tokenize.sent_tokenize(text, language=language):
-                            if len(sentence) > SENTENCE_MINLENGTH:
-                                sentences.add(sentence.replace("\n", " "))
-                                columns[column] += 1
+                        for sentence in sentence_generator(text, language):
+                            sentences.add(sentence)
+                            columns[column] += 1
 
     for sentence in sentences:
         outfile.write(f"{sentence}\n")
@@ -436,10 +442,9 @@ def pdf2queries(infile, outfile, firstpage, lastpage):
     text = subprocess.check_output(
         ["pdftotext", "-f", str(firstpage), "-l", str(lastpage), "-nopgbrk", infile, "-"], text=True
     )
-    for sentence in tokenize.sent_tokenize(text, language="english"):
-        if len(sentence) > SENTENCE_MINLENGTH:
-            sentences.add(sentence.replace("\n", " "))
-            total += 1
+    for sentence in sentence_generator(text, "english"):
+        sentences.add(sentence)
+        total += 1
 
     for sentence in sentences:
         outfile.write(f"{sentence}\n")
@@ -451,7 +456,7 @@ def pdf2queries(infile, outfile, firstpage, lastpage):
 
 
 @cli.command()
-@click.argument("outdir", type=click.Path(exists=False, path_type=Path))
+@click.argument("outdir", type=click.Path(exists=False, file_okay=False, path_type=Path))
 def download_do(outdir):
     with (basedir / "assets" / "do_post.json").open() as f:
         post_data = json.load(f)

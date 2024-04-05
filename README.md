@@ -6,7 +6,7 @@
 pip install -r requirements.txt
 ```
 
-Install the [Popper](https://poppler.freedesktop.org) library for its `pdftotext` command. For example, on macOS:
+Install [Popper](https://poppler.freedesktop.org) for its `pdftotext` command. For example, on macOS:
 
 ```
 brew install poppler
@@ -23,10 +23,12 @@ The commands automatically download:
 ./manage.py --help
 ```
 
+### Tenders Electronic Daily (TED)
+
 Download data, for example:
 
 ```shell
-./manage.py download 2022 01 2022 12
+./manage.py download-ted 2022 01 2022 12
 ```
 
 Transform TED XML data to CSV, for example:
