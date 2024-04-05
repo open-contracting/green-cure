@@ -8,8 +8,20 @@ pip install -r requirements.txt
 
 Install [Popper](https://poppler.freedesktop.org) for its `pdftotext` command. For example, on macOS:
 
-```
+```shell
 brew install poppler
+```
+
+Install [Pandoc](https://pandoc.org) to convert DOC and DOCX to text. For example, on macOS:
+
+```shell
+brew install pandoc
+```
+
+Install [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) to convert PDF to text. For example, on macOS:
+
+```shell
+brew install tesseract
 ```
 
 The commands automatically download:
@@ -49,6 +61,28 @@ Extract green requirements from [PDF documents](https://green-business.ec.europa
 
 ```shell
 ./manage.py pdf2queries 'Criteria for Furniture.pdf' queries-furniture.csv 6 27
+```
+
+### Dominican Republic
+
+Download data, for example:
+
+```shell
+./manage.py download-do data/do
+```
+
+### General
+
+Transform PDF, DOC, DOCX, BMP, PNG and JPEG to text files:
+
+```shell
+./manage.py any2txt data/do
+```
+
+Extract sentences from text files:
+
+```shell
+./manage.py txt2corpus data/do corpus-do.csv spanish
 ```
 
 Perform a semantic similarity search, for example:

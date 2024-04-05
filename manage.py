@@ -19,11 +19,14 @@ from urllib.request import urlopen
 
 import click
 import nltk
+import pdf2image
+import pypandoc
 import requests
 import tabulate
 from bs4 import BeautifulSoup
 from lxml import etree
 from nltk import tokenize
+from pytesseract import pytesseract
 from sentence_transformers import SentenceTransformer, util
 
 SENTENCE_MINLENGTH = 10
@@ -433,6 +436,9 @@ def search(corpusfile, queriesfile, minscore):
 @click.argument("firstpage", type=int)
 @click.argument("lastpage", type=int)
 def pdf2queries(infile, outfile, firstpage, lastpage):
+    """
+    Extract sentences from a page range in a PDF file.
+    """
     if not shutil.which("pdftotext"):
         raise click.UsageError("pdftotext command is not available. Install Poppler: https://poppler.freedesktop.org")
 
@@ -458,6 +464,9 @@ def pdf2queries(infile, outfile, firstpage, lastpage):
 @cli.command()
 @click.argument("outdir", type=click.Path(exists=False, file_okay=False, path_type=Path))
 def download_do(outdir):
+    """
+    Write "Especificaciones/Ficha Técnica" files from comprasverdes.gob.do.
+    """
     with (basedir / "assets" / "do_post.json").open() as f:
         post_data = json.load(f)
 
@@ -655,6 +664,56 @@ def download_do(outdir):
     click.secho(f"No documents found for {len(no_documents_found)} contracting processes:", fg="yellow")
     for url in no_documents_found:
         click.echo(url)
+
+
+@cli.command()
+@click.argument("indir", type=click.Path(exists=True, file_okay=False, path_type=Path))
+@click.option("--skip-existing", is_flag=True)
+def any2txt(indir, skip_existing):
+    """
+    Transform PDF, DOC, DOCX, BMP, PNG and JPEG to .txt files.
+    """
+    for root, _, files in os.walk(indir):
+        root_path = Path(root)
+        for file in files:
+            outfile = indir / f"{file}.txt"
+            infile = root_path / file
+            suffix = infile.suffix.lower()
+
+            if suffix in (".csv", ".txt"):
+                continue
+            if skip_existing and outfile.exists():
+                click.echo(".", nl=False)
+                continue
+            click.echo(infile)
+
+            if suffix in (".doc", ".docx"):
+                text = pypandoc.convert_file(infile, "plain")
+            elif suffix == (".bmp", ".jpeg", ".png"):
+                text = pytesseract.image_to_string(infile)
+            elif suffix == ".pdf":
+                text = "\n".join(pytesseract.image_to_string(i) for i in pdf2image.convert_from_path(infile, dpi=500))
+            else:
+                raise NotImplementedError(suffix)
+
+            if text:
+                with outfile.open("w") as f:
+                    f.write(text)
+
+
+@cli.command()
+@click.argument("indir", type=click.Path(exists=True, file_okay=False, path_type=Path))
+@click.argument("outfile", type=click.File("w"))
+@click.argument("language")
+def txt2corpus(indir, outfile, language):
+    """
+    Extract sentences from .txt files in the input directory.
+    """
+    writer = csv.writer(outfile)
+    for file in indir.glob("*.txt"):
+        with file.open() as f:
+            for sentence in sentence_generator(f.read(), language):
+                writer.writerow([sentence])
 
 
 if __name__ == "__main__":

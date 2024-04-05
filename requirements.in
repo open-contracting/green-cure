@@ -2,6 +2,9 @@ beautifulsoup4
 click
 lxml
 nltk
+pdf2image
+pypandoc
+pytesseract
 requests
 sentence-transformers
 tabulate
