@@ -56,6 +56,11 @@ def yearmonths(startyear, startmonth, endyear, endmonth):
             yield year, month
 
 
+def raise_if_pdftotext_not_present():
+    if not shutil.which("pdftotext"):
+        raise click.UsageError("pdftotext command is not available. Install Poppler: https://poppler.freedesktop.org")
+
+
 def sentence_generator(text, language):
     for sentence in tokenize.sent_tokenize(text, language=language):
         stripped = WHITESPACE.sub(sentence, " ").strip()
@@ -445,14 +450,13 @@ def pdf2queries(infile, outfile, firstpage, lastpage):
     """
     Extract sentences from a page range in a PDF file.
     """
-    if not shutil.which("pdftotext"):
-        raise click.UsageError("pdftotext command is not available. Install Poppler: https://poppler.freedesktop.org")
+    raise_if_pdftotext_not_present()
 
     sentences = set()
     total = 0
 
     text = subprocess.check_output(
-        ["pdftotext", "-f", str(firstpage), "-l", str(lastpage), "-nopgbrk", infile, "-"], text=True
+        ["pdftotext", "-nopgbrk", "-f", str(firstpage), "-l", str(lastpage), infile, "-"], text=True
     )
     for sentence in sentence_generator(text, "english"):
         sentences.add(sentence)
@@ -679,6 +683,8 @@ def any2txt(indir, skip_existing):
     """
     Transform PDF, DOC, DOCX, BMP, PNG and JPEG to .txt files.
     """
+    raise_if_pdftotext_not_present()
+
     for root, _, files in os.walk(indir):
         root_path = Path(root)
         for file in files:
@@ -698,7 +704,11 @@ def any2txt(indir, skip_existing):
             elif suffix == (".bmp", ".jpeg", ".png"):
                 text = pytesseract.image_to_string(infile)
             elif suffix == ".pdf":
-                text = "\n".join(pytesseract.image_to_string(i) for i in pdf2image.convert_from_path(infile, dpi=500))
+                text = subprocess.check_output(["pdftotext", "-nopgbrk", infile, "-"], text=True)
+                if not text:
+                    text = "\n".join(
+                        pytesseract.image_to_string(i) for i in pdf2image.convert_from_path(infile, dpi=500)
+                    )
             else:
                 click.secho(f"Unsupported format ({suffix})", fg="yellow")
                 continue
