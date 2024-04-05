@@ -30,6 +30,7 @@ from pytesseract import pytesseract
 from sentence_transformers import SentenceTransformer, util
 
 SENTENCE_MINLENGTH = 10
+WHITESPACE = re.compile(r"\s+")
 
 now = datetime.datetime.now(tz=datetime.UTC)
 basedir = Path(__file__).resolve().parent
@@ -57,7 +58,7 @@ def yearmonths(startyear, startmonth, endyear, endmonth):
 
 def sentence_generator(text, language):
     for sentence in tokenize.sent_tokenize(text, language=language):
-        stripped = sentence.replace("\n", " ").strip()
+        stripped = WHITESPACE.sub(sentence, " ").strip()
         if len(stripped) > SENTENCE_MINLENGTH:
             yield stripped
 
@@ -422,7 +423,6 @@ def search(corpusfile, queriesfile, minscore):
             corpus_chunk_size=500000,
         )
 
-    whitespace = re.compile(r"\s+")
     remove = re.compile(r"[•]\s*")
 
     matches = 0
@@ -432,7 +432,7 @@ def search(corpusfile, queriesfile, minscore):
             click.echo(f"\nQ: {queries[i]}")
             for hit in response:
                 if hit["score"] >= minscore:
-                    click.echo(f"{hit['score']:.4f} {whitespace.sub(' ', remove.sub('', corpus[hit['corpus_id']]))}")
+                    click.echo(f"{hit['score']:.4f} {WHITESPACE.sub(' ', remove.sub('', corpus[hit['corpus_id']]))}")
     click.echo(f"\n{matches}/{len(queries)} queries match with a score >= {minscore}")
 
 
