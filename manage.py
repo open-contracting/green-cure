@@ -687,14 +687,15 @@ def any2txt(indir, skip_existing):
                 continue
             click.echo(infile)
 
-            if suffix in (".doc", ".docx"):
+            if suffix == ".docx":
                 text = pypandoc.convert_file(infile, "plain")
             elif suffix == (".bmp", ".jpeg", ".png"):
                 text = pytesseract.image_to_string(infile)
             elif suffix == ".pdf":
                 text = "\n".join(pytesseract.image_to_string(i) for i in pdf2image.convert_from_path(infile, dpi=500))
             else:
-                raise NotImplementedError(suffix)
+                click.secho(f"Unsupported format ({suffix})", fg="yellow")
+                continue
 
             if text:
                 with outfile.open("w") as f:

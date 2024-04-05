@@ -12,7 +12,7 @@ Install [Popper](https://poppler.freedesktop.org) for its `pdftotext` command. F
 brew install poppler
 ```
 
-Install [Pandoc](https://pandoc.org) to convert DOC and DOCX to text. For example, on macOS:
+Install [Pandoc](https://pandoc.org) to convert DOCX to text. For example, on macOS:
 
 ```shell
 brew install pandoc
@@ -73,7 +73,7 @@ Download data, for example:
 
 ### General
 
-Transform PDF, DOC, DOCX, BMP, PNG and JPEG to text files:
+Transform DOCX, BMP, PNG, JPEG and PDF to text files:
 
 ```shell
 ./manage.py any2txt data/do
