@@ -14,11 +14,14 @@ click==8.1.6
     # via
     #   -r requirements.in
     #   nltk
+cmake==3.29.1
+    # via triton
 filelock==3.12.4
     # via
     #   huggingface-hub
     #   torch
     #   transformers
+    #   triton
 fsspec==2023.9.2
     # via huggingface-hub
 huggingface-hub==0.20.1
@@ -34,6 +37,8 @@ joblib==1.3.2
     # via
     #   nltk
     #   scikit-learn
+lit==18.1.2
+    # via triton
 lxml==4.9.3
     # via -r requirements.in
 markupsafe==2.1.3
@@ -53,6 +58,31 @@ numpy==1.26.0
     #   sentence-transformers
     #   torchvision
     #   transformers
+nvidia-cublas-cu11==11.10.3.66
+    # via
+    #   nvidia-cudnn-cu11
+    #   nvidia-cusolver-cu11
+    #   torch
+nvidia-cuda-cupti-cu11==11.7.101
+    # via torch
+nvidia-cuda-nvrtc-cu11==11.7.99
+    # via torch
+nvidia-cuda-runtime-cu11==11.7.99
+    # via torch
+nvidia-cudnn-cu11==8.5.0.96
+    # via torch
+nvidia-cufft-cu11==10.9.0.58
+    # via torch
+nvidia-curand-cu11==10.2.10.91
+    # via torch
+nvidia-cusolver-cu11==11.4.0.1
+    # via torch
+nvidia-cusparse-cu11==11.7.4.91
+    # via torch
+nvidia-nccl-cu11==2.14.3
+    # via torch
+nvidia-nvtx-cu11==11.7.91
+    # via torch
 packaging==23.1
     # via
     #   huggingface-hub
@@ -83,7 +113,7 @@ requests==2.31.0
     #   huggingface-hub
     #   torchvision
     #   transformers
-safetensors==0.3.3
+safetensors==0.4.2
     # via transformers
 scikit-learn==1.3.1
     # via sentence-transformers
@@ -109,6 +139,7 @@ torch==2.0.1
     # via
     #   sentence-transformers
     #   torchvision
+    #   triton
 torchvision==0.15.2
     # via sentence-transformers
 tqdm==4.66.1
@@ -117,11 +148,21 @@ tqdm==4.66.1
     #   nltk
     #   sentence-transformers
     #   transformers
-transformers==4.36.0
+transformers==4.38.0
     # via sentence-transformers
+triton==2.0.0
+    # via torch
 typing-extensions==4.8.0
     # via
     #   huggingface-hub
     #   torch
 urllib3==2.0.7
     # via requests
+wheel==0.43.0
+    # via
+    #   nvidia-cublas-cu11
+    #   nvidia-cuda-cupti-cu11
+    #   nvidia-cuda-runtime-cu11
+    #   nvidia-curand-cu11
+    #   nvidia-cusparse-cu11
+    #   nvidia-nvtx-cu11
