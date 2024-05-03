@@ -142,7 +142,7 @@ torch==2.0.1
     #   triton
 torchvision==0.15.2
     # via sentence-transformers
-tqdm==4.66.1
+tqdm==4.66.3
     # via
     #   huggingface-hub
     #   nltk
