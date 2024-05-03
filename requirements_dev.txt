@@ -233,7 +233,7 @@ torchvision==0.15.2
     # via
     #   -r requirements.txt
     #   sentence-transformers
-tqdm==4.66.1
+tqdm==4.66.3
     # via
     #   -r requirements.txt
     #   huggingface-hub
