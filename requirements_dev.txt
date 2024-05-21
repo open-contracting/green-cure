@@ -178,7 +178,7 @@ regex==2023.8.8
     #   -r requirements.txt
     #   nltk
     #   transformers
-requests==2.31.0
+requests==2.32.0
     # via
     #   -r requirements.txt
     #   huggingface-hub
