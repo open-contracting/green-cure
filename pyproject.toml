@@ -1,7 +1,9 @@
 [tool.ruff]
 line-length = 119
-select = ["ALL"]
 target-version = "py311"
+
+[tool.ruff.lint]
+select = ["ALL"]
 ignore = [
   "ANN", "COM", "EM",
   "D100", "D200", "D203", "D212",
