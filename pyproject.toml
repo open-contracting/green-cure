@@ -8,7 +8,8 @@ ignore = [
   "ANN", "COM", "EM",
   # https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
   "W191", "E501", "D206", "Q000", "Q001", "Q002", "Q003", "ISC001",
-  "D100", "D200", "D203", "D212",
+  "D203", "D212",  # ignore incompatible rules
+  "D100", "D200",
   "C901",  # ... is too complex
   "D103",  # Missing docstring in public function
   "PLR0912",  # Too many branches
