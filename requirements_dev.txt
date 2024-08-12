@@ -232,7 +232,7 @@ transformers==4.38.0
     # via
     #   -r requirements.txt
     #   sentence-transformers
-triton==2.0.0
+triton==3.0.0
     # via
     #   -r requirements.txt
     #   torch
