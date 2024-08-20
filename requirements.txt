@@ -14,8 +14,6 @@ click==8.1.6
     # via
     #   -r requirements.in
     #   nltk
-cmake==3.29.1
-    # via triton
 filelock==3.12.4
     # via
     #   huggingface-hub
@@ -39,8 +37,6 @@ joblib==1.3.2
     # via
     #   nltk
     #   scikit-learn
-lit==18.1.2
-    # via triton
 lxml==4.9.3
     # via -r requirements.in
 markupsafe==2.1.3
@@ -49,7 +45,7 @@ mpmath==1.3.0
     # via sympy
 networkx==3.1
     # via torch
-nltk==3.8.2
+nltk==3.9
     # via -r requirements.in
 numpy==1.26.0
     # via
@@ -57,30 +53,36 @@ numpy==1.26.0
     #   scipy
     #   sentence-transformers
     #   transformers
-nvidia-cublas-cu11==11.10.3.66
+nvidia-cublas-cu12==12.1.3.1
     # via
-    #   nvidia-cudnn-cu11
-    #   nvidia-cusolver-cu11
+    #   nvidia-cudnn-cu12
+    #   nvidia-cusolver-cu12
     #   torch
-nvidia-cuda-cupti-cu11==11.7.101
+nvidia-cuda-cupti-cu12==12.1.105
     # via torch
-nvidia-cuda-nvrtc-cu11==11.7.99
+nvidia-cuda-nvrtc-cu12==12.1.105
     # via torch
-nvidia-cuda-runtime-cu11==11.7.99
+nvidia-cuda-runtime-cu12==12.1.105
     # via torch
-nvidia-cudnn-cu11==8.5.0.96
+nvidia-cudnn-cu12==9.1.0.70
     # via torch
-nvidia-cufft-cu11==10.9.0.58
+nvidia-cufft-cu12==11.0.2.54
     # via torch
-nvidia-curand-cu11==10.2.10.91
+nvidia-curand-cu12==10.3.2.106
     # via torch
-nvidia-cusolver-cu11==11.4.0.1
+nvidia-cusolver-cu12==11.4.5.107
     # via torch
-nvidia-cusparse-cu11==11.7.4.91
+nvidia-cusparse-cu12==12.1.0.106
+    # via
+    #   nvidia-cusolver-cu12
+    #   torch
+nvidia-nccl-cu12==2.20.5
     # via torch
-nvidia-nccl-cu11==2.14.3
-    # via torch
-nvidia-nvtx-cu11==11.7.91
+nvidia-nvjitlink-cu12==12.6.20
+    # via
+    #   nvidia-cusolver-cu12
+    #   nvidia-cusparse-cu12
+nvidia-nvtx-cu12==12.1.105
     # via torch
 packaging==23.1
     # via
@@ -132,9 +134,7 @@ threadpoolctl==3.2.0
 tokenizers==0.15.0
     # via transformers
 torch==2.4.0
-    # via
-    #   sentence-transformers
-    #   triton
+    # via sentence-transformers
 tqdm==4.66.3
     # via
     #   huggingface-hub
@@ -151,11 +151,3 @@ typing-extensions==4.8.0
     #   torch
 urllib3==2.2.2
     # via requests
-wheel==0.43.0
-    # via
-    #   nvidia-cublas-cu11
-    #   nvidia-cuda-cupti-cu11
-    #   nvidia-cuda-runtime-cu11
-    #   nvidia-curand-cu11
-    #   nvidia-cusparse-cu11
-    #   nvidia-nvtx-cu11
