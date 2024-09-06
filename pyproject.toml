@@ -29,4 +29,4 @@ ignore = [
 ]
 
 [tool.uv.pip]
-python-platform = "linux"
+python-platform = "linux"  # nvidia-*
