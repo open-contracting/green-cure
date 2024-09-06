@@ -119,8 +119,6 @@ scipy==1.11.3
     #   sentence-transformers
 sentence-transformers==3.0.1
     # via -r requirements.in
-setuptools==74.1.1
-    # via torch
 soupsieve==2.5
     # via beautifulsoup4
 sympy==1.12
