@@ -6,8 +6,6 @@ certifi==2024.7.4
     # via
     #   -r requirements.txt
     #   requests
-cfgv==3.4.0
-    # via pre-commit
 charset-normalizer==3.2.0
     # via
     #   -r requirements.txt
@@ -16,8 +14,6 @@ click==8.1.6
     # via
     #   -r requirements.txt
     #   nltk
-distlib==0.3.8
-    # via virtualenv
 filelock==3.12.4
     # via
     #   -r requirements.txt
@@ -25,7 +21,6 @@ filelock==3.12.4
     #   torch
     #   transformers
     #   triton
-    #   virtualenv
 fsspec==2023.9.2
     # via
     #   -r requirements.txt
@@ -37,8 +32,6 @@ huggingface-hub==0.20.1
     #   sentence-transformers
     #   tokenizers
     #   transformers
-identify==2.6.0
-    # via pre-commit
 idna==3.7
     # via
     #   -r requirements.txt
@@ -68,8 +61,6 @@ networkx==3.1
     #   torch
 nltk==3.9
     # via -r requirements.txt
-nodeenv==1.9.1
-    # via pre-commit
 numpy==1.26.0
     # via
     #   -r requirements.txt
@@ -143,10 +134,6 @@ pillow==10.3.0
     #   pdf2image
     #   pytesseract
     #   sentence-transformers
-platformdirs==4.2.2
-    # via virtualenv
-pre-commit==3.8.0
-    # via -r requirements_dev.in
 pypandoc==1.13
     # via -r requirements.txt
 pytesseract==0.3.10
@@ -155,7 +142,6 @@ pyyaml==6.0.1
     # via
     #   -r requirements.txt
     #   huggingface-hub
-    #   pre-commit
     #   transformers
 regex==2023.8.8
     # via
@@ -228,5 +214,3 @@ urllib3==2.2.2
     # via
     #   -r requirements.txt
     #   requests
-virtualenv==20.26.3
-    # via pre-commit
