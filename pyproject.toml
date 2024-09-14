@@ -22,9 +22,7 @@ ignore = [
   "S603",  # subprocess
   "S607",  # partial executable path
   "S113",  # requests timeout
-  "S301",  # pickle
   "S310",  # Audit URL open for permitted schemes
-  "S320",  # Using `lxml` to parse untrusted data
   "TRY003",  # Avoid specifying long messages outside the exception class
 ]
 

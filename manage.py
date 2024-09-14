@@ -167,7 +167,7 @@ def xml2csv(startyear, startmonth, endyear, endmonth, file, cpv):
                 if member.isdir():
                     continue
 
-                doc = etree.fromstring(tar.extractfile(member).read())
+                doc = etree.fromstring(tar.extractfile(member).read())  # noqa: S320
                 if (
                     # Skip eForms for now.
                     "efext" in doc.nsmap
@@ -244,7 +244,8 @@ def xml2csv(startyear, startmonth, endyear, endmonth, file, cpv):
                             common[element] = p
 
                 lots = obj.xpath("./ns:OBJECT_DESCR", **kw)
-                assert len(lots), "/OBJECT_CONTRACT/OBJECT_DESCR is missing"
+                if not lots:
+                    raise AssertionError("/OBJECT_CONTRACT/OBJECT_DESCR is missing")
                 for lot in lots:
                     row = common.copy()
 
@@ -401,7 +402,7 @@ def search(corpusfile, queriesfile, minscore):
         cache = Path(f"{file.name}.pickle")
         if cache.exists():
             with cache.open("rb") as f:
-                cache_mtime, sentences, embeddings = pickle.load(f)
+                cache_mtime, sentences, embeddings = pickle.load(f)  # noqa: S301
                 if cache_mtime == mtime:
                     return sentences, embeddings
 
@@ -486,6 +487,7 @@ def download_do(outdir):
         json=post_data,
         # The other headers from the web browser are not required.
         headers={"X-PowerBI-ResourceKey": "6d07fc9a-46df-4b72-9509-ea5c80c85178"},
+        timeout=10,
     )
     response.raise_for_status()
 
@@ -561,7 +563,7 @@ def download_do(outdir):
             # Accept-Language must be set for document types to appear correctly (English is often empty).
             #
             # /Public/Tendering/OpportunityDetail/Index?noticeUID=DO1.NTC.1305239
-            response = requests.get(url, headers={"Accept-Language": "es"})
+            response = requests.get(url, headers={"Accept-Language": "es"}, timeout=10)
             response.raise_for_status()
 
             soup = BeautifulSoup(response.content, "html.parser")
@@ -611,7 +613,7 @@ def download_do(outdir):
 
                 # /Public/Tendering/OpportunityDetail/DownloadFile?documentFileId=7364440
                 # &mkey=554f0311_b812_4cd7_babe_ed25a7a17272
-                response = requests.get(f"{base_url}{document_url}")
+                response = requests.get(f"{base_url}{document_url}", timeout=10)
                 response.raise_for_status()
 
                 # Responses look like:
@@ -623,7 +625,7 @@ def download_do(outdir):
 
                 # /Public/Archive/RetrieveFile/Index?DocumentId=7585910&InCommunity=False
                 # &InPaymentGateway=False&DocUniqueIdentifier=
-                response = requests.get(f"{base_url}{pdf_url}")
+                response = requests.get(f"{base_url}{pdf_url}", timeout=10)
                 response.raise_for_status()
 
                 with document_path.open("wb") as f:
