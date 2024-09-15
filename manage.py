@@ -167,7 +167,7 @@ def xml2csv(startyear, startmonth, endyear, endmonth, file, cpv):
                 if member.isdir():
                     continue
 
-                doc = etree.fromstring(tar.extractfile(member).read())  # noqa: S320 # trusted data
+                doc = etree.fromstring(tar.extractfile(member).read())  # noqa: S320 # trusted internal
                 if (
                     # Skip eForms for now.
                     "efext" in doc.nsmap
