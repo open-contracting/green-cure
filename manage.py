@@ -96,7 +96,7 @@ def download_ted(startyear, startmonth, endyear, endmonth):
         url = f"ftp://guest:guest@ted.europa.eu/monthly-packages/{year}/{year}-{month:02d}.tar.gz"
         click.echo(f"Retrieving {url} ...")
         try:
-            with closing(urlopen(url)) as r, path.open("wb") as f:
+            with closing(urlopen(url)) as r, path.open("wb") as f:  # noqa: S310 # false positive
                 shutil.copyfileobj(r, f)
         except URLError as e:
             click.echo(e.reason, err=True)
@@ -167,7 +167,7 @@ def xml2csv(startyear, startmonth, endyear, endmonth, file, cpv):
                 if member.isdir():
                     continue
 
-                doc = etree.fromstring(tar.extractfile(member).read())  # noqa: S320
+                doc = etree.fromstring(tar.extractfile(member).read())  # noqa: S320 # trusted data
                 if (
                     # Skip eForms for now.
                     "efext" in doc.nsmap
@@ -402,7 +402,7 @@ def search(corpusfile, queriesfile, minscore):
         cache = Path(f"{file.name}.pickle")
         if cache.exists():
             with cache.open("rb") as f:
-                cache_mtime, sentences, embeddings = pickle.load(f)  # noqa: S301
+                cache_mtime, sentences, embeddings = pickle.load(f)  # noqa: S301 # our data
                 if cache_mtime == mtime:
                     return sentences, embeddings
 
