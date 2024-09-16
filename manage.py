@@ -82,9 +82,7 @@ def timed(message):
 @click.argument("endyear", type=click.IntRange(2015, now.year))
 @click.argument("endmonth", type=click.IntRange(1, 12))
 def download_ted(startyear, startmonth, endyear, endmonth):
-    """
-    Write monthly packages from Tenders Electronic Daily to a data/ directory.
-    """
+    """Write monthly packages from Tenders Electronic Daily to a data/ directory."""
     datadir.mkdir(exist_ok=True)
 
     for year, month in yearmonths(startyear, startmonth, endyear, endmonth):
@@ -110,9 +108,7 @@ def download_ted(startyear, startmonth, endyear, endmonth):
 @click.argument("file", type=click.File("w"))
 @click.argument("cpv", nargs=-1)
 def xml2csv(startyear, startmonth, endyear, endmonth, file, cpv):
-    """
-    Transform monthly packages in the data/ directory to a CSV file.
-    """
+    """Transform monthly packages in the data/ directory to a CSV file."""
     kw = {"namespaces": {"ns": "http://publications.europa.eu/resource/schema/ted/R2.0.9/publication"}}
 
     writer = csv.DictWriter(
@@ -285,9 +281,7 @@ def xml2csv(startyear, startmonth, endyear, endmonth, file, cpv):
 @click.argument("outfile", type=click.File("w"))
 @click.argument("cpv", nargs=-1)
 def csv2corpus(infile, outfile, cpv):
-    """
-    Extract sentences from the rows of a CSV file that match the CPV code(s), one line per sentence.
-    """
+    """Extract sentences from the rows of a CSV file that match the CPV code(s), one line per sentence."""
     languages = {
         # ls ~/nltk_data/tokenizers/punkt/*.pickle
         # Also covers "malayalam", but conflicts with "ML" for "maltese".
@@ -387,9 +381,7 @@ def csv2corpus(infile, outfile, cpv):
 @click.argument("queriesfile", type=click.File())
 @click.argument("minscore", type=float)
 def search(corpusfile, queriesfile, minscore):
-    """
-    Calculate which sentences match the queries.
-    """
+    """Calculate which sentences match the queries."""
 
     @functools.cache
     def model():
@@ -397,7 +389,7 @@ def search(corpusfile, queriesfile, minscore):
         return SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
 
     def cached(file):
-        mtime = os.stat(file.name).st_mtime
+        mtime = file.stat().st_mtime
 
         cache = Path(f"{file.name}.pickle")
         if cache.exists():
@@ -448,16 +440,15 @@ def search(corpusfile, queriesfile, minscore):
 @click.argument("firstpage", type=int)
 @click.argument("lastpage", type=int)
 def pdf2queries(infile, outfile, firstpage, lastpage):
-    """
-    Extract sentences from a page range in a PDF file.
-    """
+    """Extract sentences from a page range in a PDF file."""
     raise_if_pdftotext_not_present()
 
     sentences = set()
     total = 0
 
-    text = subprocess.check_output(
-        ["pdftotext", "-nopgbrk", "-f", str(firstpage), "-l", str(lastpage), infile, "-"], text=True
+    text = subprocess.check_output(  # noqa: S603: trusted input
+        ["pdftotext", "-nopgbrk", "-f", str(firstpage), "-l", str(lastpage), infile, "-"],  # noqa: S607
+        text=True,
     )
     for sentence in sentence_generator(text, "english"):
         sentences.add(sentence)
@@ -475,9 +466,7 @@ def pdf2queries(infile, outfile, firstpage, lastpage):
 @cli.command()
 @click.argument("outdir", type=click.Path(exists=False, file_okay=False, path_type=Path))
 def download_do(outdir):
-    """
-    Write "Especificaciones/Ficha Técnica" files from comprasverdes.gob.do.
-    """
+    """Write "Especificaciones/Ficha Técnica" files from comprasverdes.gob.do."""
     with (basedir / "assets" / "do_post.json").open() as f:
         post_data = json.load(f)
 
@@ -682,9 +671,7 @@ def download_do(outdir):
 @click.argument("indir", type=click.Path(exists=True, file_okay=False, path_type=Path))
 @click.option("--skip-existing", is_flag=True)
 def any2txt(indir, skip_existing):
-    """
-    Transform PDF, DOC, DOCX, BMP, PNG and JPEG to .txt files.
-    """
+    """Transform PDF, DOC, DOCX, BMP, PNG and JPEG to .txt files."""
     raise_if_pdftotext_not_present()
 
     for root, _, files in os.walk(indir):
@@ -706,7 +693,10 @@ def any2txt(indir, skip_existing):
             elif suffix == (".bmp", ".jpeg", ".png"):
                 text = pytesseract.image_to_string(infile)
             elif suffix == ".pdf":
-                text = subprocess.check_output(["pdftotext", "-nopgbrk", infile, "-"], text=True)
+                text = subprocess.check_output(  # noqa: S603: trusted input
+                    ["pdftotext", "-nopgbrk", infile, "-"],  # noqa: S607
+                    text=True,
+                )
                 if not text:
                     text = "\n".join(
                         pytesseract.image_to_string(i) for i in pdf2image.convert_from_path(infile, dpi=500)
@@ -725,9 +715,7 @@ def any2txt(indir, skip_existing):
 @click.argument("outfile", type=click.File("w"))
 @click.argument("language")
 def txt2corpus(indir, outfile, language):
-    """
-    Extract sentences from .txt files in the input directory.
-    """
+    """Extract sentences from .txt files in the input directory."""
     writer = csv.writer(outfile)
     for file in indir.glob("*.txt"):
         with file.open() as f:
