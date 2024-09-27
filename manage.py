@@ -177,7 +177,7 @@ def xml2csv(startyear, startmonth, endyear, endmonth, file, cpv):
 
                 number = form.xpath("./@FORM", **kw)[0]
                 # Forms without Section III.
-                if number in (
+                if number in {
                     # Contract award notice
                     "F03",
                     "F06",
@@ -185,14 +185,14 @@ def xml2csv(startyear, startmonth, endyear, endmonth, file, cpv):
                     "F14",
                     # Modification notice
                     "F20",
-                ):
+                }:
                     continue
 
                 obj = form.xpath("./ns:OBJECT_CONTRACT", **kw)[0]
                 code = obj.xpath("./ns:CPV_MAIN/ns:CPV_CODE/@CODE", **kw)[0]
 
                 # https://docs.google.com/spreadsheets/d/1pmc_3oI_teOk7FMVyLK1bKt8d8o3SkvY_Faqth4PMqg/edit
-                if code[:2] in ("09", "24", "33", "35", "38", "66", "71", "72", "77", "80", "85"):
+                if code[:2] in {"09", "24", "33", "35", "38", "66", "71", "72", "77", "80", "85"}:
                     continue
 
                 common = {}
@@ -681,7 +681,7 @@ def any2txt(indir, skip_existing):
             infile = root_path / file
             suffix = infile.suffix.lower()
 
-            if suffix in (".csv", ".txt"):
+            if suffix in {".csv", ".txt"}:
                 continue
             if skip_existing and outfile.exists():
                 click.echo(".", nl=False)
