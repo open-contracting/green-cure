@@ -13,6 +13,7 @@ import tarfile
 import time
 from collections import defaultdict
 from contextlib import closing, contextmanager
+from operator import itemgetter
 from pathlib import Path
 from urllib.error import URLError
 from urllib.request import urlopen
@@ -659,7 +660,7 @@ def download_do(outdir):
     #   1 Ofertas técnicas
     #   1 Publicación en periódicos de circulación nacional
     click.secho(f"Skipped {len(document_types_skipped)} document types:", fg="yellow")
-    for document_type, count in sorted(document_types_skipped.items(), reverse=True, key=lambda item: item[1]):
+    for document_type, count in sorted(document_types_skipped.items(), reverse=True, key=itemgetter(1)):
         click.echo(f"{count:3d} {document_type}")
 
     click.secho(f"No documents found for {len(no_documents_found)} contracting processes:", fg="yellow")
